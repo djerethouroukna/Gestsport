@@ -1,0 +1,73 @@
+services:
+  # Service Web Django
+  - type: web
+    name: gestsport-web
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
+    healthCheckPath: /health/
+    envVars:
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gestsport-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: gestsport-redis
+          property: connectionString
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+
+  # Service WebSocket (Daphne pour Channels)
+  - type: web
+    name: gestsport-websocket
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "daphne config.asgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: gestsport-web
+          property: envVars.SECRET_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gestsport-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: gestsport-redis
+          property: connectionString
+
+databases:
+  # Base de données PostgreSQL
+  - name: gestsport-db
+    databaseName: gestsport
+    user: gestsport_user
+    plan: free
+
+# Service Redis pour WebSocket et Cache
+services:
+  - type: redis
+    name: gestsport-redis
+    plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
