@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Variables Django</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Test des variables Django pour Chart.js</h1>
+    
+    <h2>Variables Python/Django :</h2>
+    <pre>
+        month_labels: {{ month_labels }}
+        reservations_chart_data: {{ reservations_chart_data }}
+        terrain_type_labels: {{ terrain_type_labels }}
+        terrain_type_data: {{ terrain_type_data }}
+    </pre>
+    
+    <h2>Variables formatées pour JavaScript :</h2>
+    <pre>
+        month_labels_json: {{ month_labels|safe }}
+        reservations_chart_data_json: {{ reservations_chart_data|safe }}
+        terrain_type_labels_json: {{ terrain_type_labels|safe }}
+        terrain_type_data_json: {{ terrain_type_data|safe }}
+    </pre>
+    
+    <h2>Test Chart.js avec variables formatées :</h2>
+    <div style="width: 400px; margin: 20px;">
+        <canvas id="testChart"></canvas>
+    </div>
+    
+    <script>
+        console.log('Variables Django :');
+        console.log('month_labels:', {{ month_labels|safe }});
+        console.log('reservations_chart_data:', {{ reservations_chart_data|safe }});
+        
+        // Test avec les variables formatées
+        const ctx = document.getElementById('testChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ month_labels|safe }},
+                datasets: [{
+                    label: 'Test Réservations',
+                    data: {{ reservations_chart_data|safe }},
+                    borderColor: '#2ECC71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

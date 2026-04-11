@@ -1,0 +1,402 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Accueil - GestSport{% endblock %}
+
+{% block breadcrumb %}Accueil{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">
+                        <i class="fas fa-futbol me-3 text-warning"></i>
+                        Réservez Vos Terrains Facilement
+                    </h1>
+                    <p class="lead mb-4">Découvrez, réservez et jouez aux meilleurs terrains sportifs de votre région</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        {% if not user.is_authenticated %}
+                            <a href="{% url 'login' %}" class="btn btn-light btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Connexion
+                            </a>
+                            <a href="{% url 'users:register' %}" class="btn btn-outline-light btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>S'inscrire
+                            </a>
+                        {% else %}
+                            <a href="{% url 'terrains:terrain_list' %}" class="btn btn-light btn-lg">
+                                <i class="fas fa-search me-2"></i>Découvrir les Terrains
+                            </a>
+                            <a href="{% url 'reservations:reservation_list' %}" class="btn btn-outline-light btn-lg">
+                                <i class="fas fa-calendar me-2"></i>Mes Réservations
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <img src="https://via.placeholder.com/500x400?text=Terrains+Sportifs" alt="Terrains" class="img-fluid rounded shadow" style="max-height: 400px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card primary">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">TERRAINS</div>
+                    <div class="stat-value">15</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+25.0%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-futbol"></i>
+                </div>
+            </div>
+            <canvas id="terrainsChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card success">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">RÉSERVATIONS</div>
+                    <div class="stat-value">1,234</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+40.9%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+            <canvas id="reservationsChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card info">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">UTILISATEURS</div>
+                    <div class="stat-value">892</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+84.7%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <canvas id="usersChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card warning">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">SATISFACTION</div>
+                    <div class="stat-value">4.8</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+12.3%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+            </div>
+            <canvas id="satisfactionChart" height="60"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card">
+            <h6 class="mb-4">Pourquoi Nous Choisir ?</h6>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div class="social-icon facebook mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h5 class="card-title">Localisation</h5>
+                        <p class="text-muted">Trouvez les terrains proches de vous avec notre système de géolocalisation avancé</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div class="social-icon twitter mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h5 class="card-title">Disponibilité</h5>
+                        <p class="text-muted">Consultez les créneaux disponibles en temps réel et réservez instantanément</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div class="social-icon linkedin mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <h5 class="card-title">Paiement Sécurisé</h5>
+                        <p class="text-muted">Plusieurs moyens de paiement acceptés avec transactions sécurisées</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sports Section 
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">Nos Sports</h6>
+                <a href="{% url 'activities:activity_list' %}" class="btn btn-sm btn-primary">
+                    Voir tout
+                </a>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="social-card">
+                        <div class="social-icon facebook">
+                            <i class="fas fa-futbol"></i>
+                        </div>
+                        <h6 class="mb-1">Football</h6>
+                        <div class="small text-muted">8 terrains</div>
+                        <canvas id="footballChart" height="50"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="social-card">
+                        <div class="social-icon twitter">
+                            <i class="fas fa-table-tennis"></i>
+                        </div>
+                        <h6 class="mb-1">Tennis</h6>
+                        <div class="small text-muted">4 terrains</div>
+                        <canvas id="tennisChart" height="50"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="social-card">
+                        <div class="social-icon linkedin">
+                            <i class="fas fa-basketball-ball"></i>
+                        </div>
+                        <h6 class="mb-1">Basketball</h6>
+                        <div class="small text-muted">3 terrains</div>
+                        <canvas id="basketballChart" height="50"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="social-card">
+                        <div class="social-icon calendar">
+                            <i class="fas fa-volleyball-ball"></i>
+                        </div>
+                        <h6 class="mb-1">Volleyball</h6>
+                        <div class="small text-muted">2 terrains</div>
+                        <canvas id="volleyballChart" height="50"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity 
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">Activité Récente</h6>
+                <a href="#" class="btn btn-sm btn-outline-primary">
+                    Voir tout
+                </a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Action</th>
+                            <th>Terrain</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="user-avatar me-2" style="width: 30px; height: 30px; font-size: 0.75rem;">
+                                        JD
+                                    </div>
+                                    <span>John Doe</span>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-success">Réservation</span></td>
+                            <td>Terrain A</td>
+                            <td>Il y a 2 min</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="user-avatar me-2" style="width: 30px; height: 30px; font-size: 0.75rem;">
+                                        SM
+                                    </div>
+                                    <span>Sarah Martin</span>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-info">Inscription</span></td>
+                            <td>-</td>
+                            <td>Il y a 15 min</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="user-avatar me-2" style="width: 30px; height: 30px; font-size: 0.75rem;">
+                                        MJ
+                                    </div>
+                                    <span>Mike Johnson</span>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-warning">Annulation</span></td>
+                            <td>Terrain B</td>
+                            <td>Il y a 1 heure</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>-->
+    
+    <div class="col-xl-4 col-lg-5">
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Quick Actions</h6>
+            
+            <div class="d-grid gap-2">
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'login' %}" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Se connecter
+                    </a>
+                    <a href="{% url 'users:register' %}" class="btn btn-success">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Créer un compte
+                    </a>
+                {% else %}
+                    <a href="{% url 'terrains:terrain_list' %}" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>
+                        Réserver un terrain
+                    </a>
+                    <a href="{% url 'activities:activity_list' %}" class="btn btn-info">
+                        <i class="fas fa-running me-2"></i>
+                        Voir les activités
+                    </a>
+                    <a href="{% url 'contact' %}" class="btn btn-warning">
+                        <i class="fas fa-envelope me-2"></i>
+                        Contactez-nous
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="progress-card">
+            <h6 class="mb-4">Tendances</h6>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Football</div>
+                    <div class="small">45%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: 45%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Basketball</div>
+                    <div class="small">25%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: 25%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Tennis</div>
+                    <div class="small">20%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-info" style="width: 20%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Autres</div>
+                    <div class="small">10%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-warning" style="width: 10%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mini Charts for Stats Cards
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts
+createMiniChart('terrainsChart', [12, 13, 14, 13, 15, 14, 15], '#4e73df');
+createMiniChart('reservationsChart', [1000, 1100, 1050, 1200, 1150, 1234, 1234], '#1cc88a');
+createMiniChart('usersChart', [700, 750, 800, 850, 870, 892, 892], '#36b9cc');
+createMiniChart('satisfactionChart', [4.5, 4.6, 4.7, 4.8, 4.7, 4.8, 4.8], '#f6c23e');
+
+// Sports charts
+createMiniChart('footballChart', [30, 35, 32, 38, 35, 40, 38], '#3b5998');
+createMiniChart('tennisChart', [15, 18, 16, 20, 18, 22, 20], '#1da1f2');
+createMiniChart('basketballChart', [20, 22, 25, 23, 28, 25, 28], '#0077b5');
+createMiniChart('volleyballChart', [10, 12, 11, 15, 13, 16, 14], '#6f42c1');
+</script>
+{% endblock %}

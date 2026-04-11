@@ -1,0 +1,404 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>{% block title %}GestSport{% endblock %}</title>
+    
+    <!-- CoreUI CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@coreui/coreui@4.2.6/dist/css/coreui.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Progress Card Global CSS -->
+    <link href="/static/css/progress-card-global.css?v={{ request.session.cache_bust|default:'202403301200' }}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        :root {
+            --cui-sidebar-bg: #2ECC71;
+            --cui-sidebar-width: 250px;
+            --cui-header-bg: #ffffff;
+            --cui-header-height: 60px;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        /* Forcer la suppression des bordures sur progress-card */
+        .progress-card {
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: var(--card-shadow) !important;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--cui-sidebar-width);
+            background: #2ECC71;
+            z-index: 1030;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .sidebar-brand {
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .sidebar-brand i {
+            margin-right: 0.5rem;
+            color: #f7f7f7;
+        }
+        
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+        
+        .sidebar-title {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .sidebar-item {
+            margin: 0.25rem 0;
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left-color: #eeede9;
+        }
+        
+        .sidebar-link i {
+            width: 20px;
+            margin-right: 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        .main-content {
+            margin-left: var(--cui-sidebar-width);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+        
+        .top-header {
+            background: #ffffff;
+            height: var(--cui-header-height);
+            border-bottom: 1px solid #e3e6f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+        
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            font-size: 0.875rem;
+        }
+        
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "/";
+            color: #858796;
+        }
+        
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .nav-item {
+            position: relative;
+        }
+        
+        .nav-link {
+            color: #5a5c69;
+            padding: 0.5rem;
+            border-radius: 0.35rem;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover {
+            background: #f8f9fc;
+            color: #3a3b45;
+        }
+        
+        .content-wrapper {
+            padding: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border-left: 0.25rem solid;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2);
+        }
+        
+        .stat-card.primary { border-left-color: #4e73df; }
+        .stat-card.success { border-left-color: #1cc88a; }
+        .stat-card.info { border-left-color: #36b9cc; }
+        .stat-card.warning { border-left-color: #dfdddb; }
+        .stat-card.danger { border-left-color: #e74a3b; }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-title {
+            color: #5a5c69;
+            font-size: 0.7rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-icon {
+            color: rgba(0,0,0,0.1);
+            font-size: 2rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #5a5c69;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-change {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .stat-change.positive { color: #1cc88a; }
+        .stat-change.negative { color: #e74a3b; }
+        
+        .social-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .social-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2);
+        }
+        
+        .social-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            font-size: 1.25rem;
+            color: white;
+        }
+        
+        .social-icon.facebook { background: #3b5998; }
+        .social-icon.twitter { background: #1da1f2; }
+        .social-icon.linkedin { background: #0077b5; }
+        .social-icon.calendar { background: #6f42c1; }
+        
+        .progress-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .progress {
+            height: 0.75rem;
+            border-radius: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .content-wrapper {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+     
+   <!-- <div class="sidebar" id="sidebar">
+        <a href="{% url 'home' %}" class="sidebar-brand">
+            <i class="fas fa-futbol"></i>
+            GESTSPORT
+        </a>
+        
+        <nav class="sidebar-nav">
+            <div class="sidebar-title">Menu Principal</div>
+            
+            <div class="sidebar-item">
+                <a href="{% url 'home' %}" class="sidebar-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <i class="fas fa-home"></i>
+                </a>
+            </div>
+            
+            <div class="sidebar-item">
+                <a href="{% url 'terrains:terrain_list' %}" class="sidebar-link">
+                    <i class="fas fa-futbol"></i>
+                    Terrains
+                </a>
+            </div>
+            
+            <div class="sidebar-item">
+                <a href="{% url 'activities:activity_list' %}" class="sidebar-link">
+                    <i class="fas fa-running"></i>
+                    Activités
+                </a>
+            </div>
+            
+            <div class="sidebar-title">Compte</div>
+            
+            <div class="sidebar-item">
+                <a href="{% url 'login' %}" class="sidebar-link">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Connexion
+                </a>
+            </div>
+            
+            <!-- <div class="sidebar-item">
+                <a href="{% url 'users:register' %}" class="sidebar-link">
+                    <i class="fas fa-user-plus"></i>
+                    Inscription
+                </a>
+            </div>
+            
+            <div class="sidebar-item">
+                <a href="{% url 'contact' %}" class="sidebar-link">
+                    <i class="fas fa-envelope"></i>
+                    Contact
+                </a>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Main Content 
+    <div class="main-content">
+        <!-- Top Header 
+        <header class="top-header">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link d-md-none" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'home' %}" style="color: #f3f3f7; text-decoration: none;"></a>
+                        </li>
+                        <li class="breadcrumb-item active">{% block breadcrumb %}GestSport{% endblock %}</li>
+                    </ol>
+                </nav>
+            </div>
+  -->          
+            <!-- <div class="header-nav">
+                
+                <a href="{% url 'login' %}" class="btn" style="background-color: #2ECC71; border-color: #2ECC71; color: white;">
+                    <i class="fas fa-sign-in-alt me-2"></i>Connexion
+                </a>
+                <a href="{% url 'users:register' %}" class="btn btn-success btn-sm">
+                    <i class="fas fa-user-plus me-2"></i>Inscription
+                </a>
+            </div> -->
+        </header>
+        
+        <!-- Page Content -->
+        <main class="{% block main_class %}content-wrapper{% endblock %}" style="overflow: hidden;">
+           {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Wrapper -->
+    <script src="/static/js/chart.js"></script>
+    
+    <script>
+        // Active users chart
+        document.addEventListener('DOMContentLoaded', function() {
+            createMiniChart('activeUsersChart', [1100, 1150, 1200, 1180, 1220, 1234, 1234], '#4e73df');
+            
+            // Form submission animation
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connexion en cours...';
+                submitBtn.disabled = true;
+                
+                // Re-enable after 5 seconds in case of error
+                setTimeout(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }, 5000);
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

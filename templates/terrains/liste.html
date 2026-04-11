@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Terrains - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-lg-3">
+            <!-- Filtre Sidebar -->
+            <div class="card shadow-sm sticky-lg-top" style="top: 80px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtres</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filterForm" class="form">
+                        <!-- Type de terrain -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Type de Terrain</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="football" id="football">
+                                <label class="form-check-label" for="football">Football</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="tennis" id="tennis">
+                                <label class="form-check-label" for="tennis">Tennis</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="basketball" id="basketball">
+                                <label class="form-check-label" for="basketball">Basketball</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="type" value="volleyball" id="volleyball">
+                                <label class="form-check-label" for="volleyball">Volleyball</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Prix -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Prix Max/h</label>
+                            <input type="range" class="form-range" name="prix_max" min="0" max="100" value="100">
+                            <small class="text-muted">Jusqu'à <span id="prix_val">100</span>FCFA</small>
+                        </div>
+                        
+                        <!-- Note -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Note Minimum</label>
+                            <select class="form-select" name="rating">
+                                <option value="">Toutes les notes</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 5 étoiles</option>
+                                <option value="4">⭐⭐⭐⭐ 4+ étoiles</option>
+                                <option value="3">⭐⭐⭐ 3+ étoiles</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>Filtrer
+                        </button>
+                        <a href="{% url 'terrains:terrain_list' %}" class="btn btn-outline-secondary w-100 mt-2">
+                            <i class="fas fa-redo me-2"></i>Réinitialiser
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Liste -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold mb-0">Nos Terrains</h2>
+                <span class="badge bg-primary">{{ terrains.count }} terrain(s)</span>
+            </div>
+            
+            <div class="row g-4">
+                {% for terrain in terrains %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm hover-shadow transition">
+                        <!-- Image -->
+                        <div class="position-relative" style="height: 200px; overflow: hidden;">
+                            <img src="https://via.placeholder.com/400x300?text={{ terrain.name }}" class="card-img-top h-100" style="object-fit: cover;" alt="{{ terrain.name }}">
+                            <span class="badge bg-success position-absolute top-0 start-0 m-2">
+                                {{ terrain.get_terrain_type_display }}
+                            </span>
+                            {% if terrain.status == 'available' %}
+                            <span class="badge bg-info position-absolute top-0 end-0 m-2">
+                                Disponible
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Contenu -->
+                        <div class="card-body">
+                            <h5 class="card-title">{{ terrain.name }}</h5>
+                            <div class="mb-3 d-flex align-items-center">
+                                <i class="fas fa-star text-warning"></i>
+                                <span class="ms-2 fw-bold">{{ terrain.average_rating|default:"4.5" }}/5</span>
+                                <span class="text-muted ms-2">(45 avis)</span>
+                            </div>
+                            <p class="card-text text-muted small">{{ terrain.description|truncatewords:10 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-success fw-bold fs-5">{{ terrain.price_per_hour }}FCFA/h</span>
+                                <span class="text-muted small">
+                                    <i class="fas fa-users me-1"></i>{{ terrain.capacity }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div class="card-footer bg-light border-0">
+                            <a href="{% url 'terrains:terrain_detail' terrain.id %}" class="btn btn-primary btn-sm w-100">
+                                <i class="fas fa-info-circle me-1"></i>Voir détail
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center py-5">
+                        <i class="fas fa-search fa-2x mb-3 d-block"></i>
+                        <strong>Aucun terrain trouvé</strong>
+                        <p class="text-muted mt-2">Essayez de modifier vos filtres</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Pagination" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1">Première</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédente</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Première</span></li>
+                        <li class="page-item disabled"><span class="page-link">Précédente</span></li>
+                    {% endif %}
+                    
+                    <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivante</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Dernière</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Suivante</span></li>
+                        <li class="page-item disabled"><span class="page-link">Dernière</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-shadow {
+        transition: all 0.3s ease;
+    }
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-5px);
+    }
+</style>
+
+<script>
+document.querySelector('input[name="prix_max"]').addEventListener('change', function(e) {
+    document.getElementById('prix_val').textContent = e.target.value;
+});
+</script>
+{% endblock %}

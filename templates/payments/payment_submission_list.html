@@ -1,0 +1,384 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Soumissions de Paiement - GestSport{% endblock %}
+
+{% block breadcrumb %}Soumissions de Paiement{% endblock %}
+
+{% block content %}
+<!-- Header avec statistiques -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-4" style="width: 60px; height: 60px; font-size: 1.5rem; background: rgba(255,255,255,0.2);">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div>
+                            <h2 class="mb-2">Soumissions de Paiement</h2>
+                            <p class="mb-1 opacity-75">Gérez les validations des paiements des réservations</p>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <span class="badge bg-warning text-dark fs-6">
+                                    <i class="fas fa-clock me-1"></i>{{ pending_count }} en attente
+                                </span>
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-check me-1"></i>{{ validated }} validées
+                                </span>
+                                <span class="badge bg-danger fs-6">
+                                    <i class="fas fa-times me-1"></i>{{ rejected }} rejetées
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="text-end">
+                        <div class="small opacity-75">Total des soumissions</div>
+                        <div class="h3 mb-0">{{ total }}</div>
+                        <div class="small opacity-75">{{ validation_rate|floatformat:1 }}% de validation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres et actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <form method="get" class="d-flex gap-2">
+                        <select name="status" class="form-select" style="max-width: 200px;">
+                            <option value="">Tous les statuts</option>
+                            <option value="submitted" {% if current_status == 'submitted' %}selected{% endif %}>Soumis</option>
+                            <option value="under_review" {% if current_status == 'under_review' %}selected{% endif %}>En cours de validation</option>
+                            <option value="validated" {% if current_status == 'validated' %}selected{% endif %}>Validés</option>
+                            <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>Rejetés</option>
+                        </select>
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="fas fa-filter me-1"></i>Filtrer
+                        </button>
+                        {% if current_status %}
+                        <a href="{% url 'payments:payment-list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Effacer
+                        </a>
+                        {% endif %}
+                    </form>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="{% url 'dashboard' %}" class="btn btn-info">
+                        <i class="fas fa-chart-line me-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des soumissions -->
+<div class="row">
+    <div class="col-12">
+        <div class="progress-card">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Réservation</th>
+                            <th>Utilisateur</th>
+                            <th>Montant</th>
+                            <th>Méthode</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for submission in submissions %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">#{{ submission.reservation.id }}</div>
+                                <small class="text-muted">{{ submission.reservation.terrain.name }}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="social-icon primary me-2" style="width: 35px; height: 35px; font-size: 0.8rem;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ submission.user.get_full_name }}</div>
+                                        <small class="text-muted">{{ submission.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ submission.amount }} {{ submission.currency }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if submission.payment_method_type == 'card' %}
+                                    <i class="fas fa-credit-card text-primary me-2"></i>
+                                    <span>Carte ****{{ submission.card_last_four }}</span>
+                                    {% elif submission.payment_method_type == 'mobile_money' %}
+                                    <i class="fas fa-mobile-alt text-success me-2"></i>
+                                    <span>{{ submission.mobile_provider }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if submission.status == 'submitted' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-clock me-1"></i>Soumis
+                                </span>
+                                {% elif submission.status == 'under_review' %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-eye me-1"></i>En validation
+                                </span>
+                                {% elif submission.status == 'validated' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Validé
+                                </span>
+                                {% elif submission.status == 'rejected' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Rejeté
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="small">{{ submission.created_at|date:'d/m/Y' }}</div>
+                                <div class="small text-muted">{{ submission.created_at|time:'H:i' }}</div>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="#" class="btn btn-outline-primary" title="Détails non disponibles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if submission.is_pending_validation %}
+                                    <button class="btn btn-outline-success" onclick="validateSubmission('{{ submission.id|stringformat:"s" }}')">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="rejectSubmission('{{ submission.id|stringformat:"s" }}')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <div>Aucune soumission trouvée</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if current_status %}&status={{ current_status }}{% endif %}">Début</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Précédent</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Suivant</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_status %}&status={{ current_status }}{% endif %}">Fin</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de validation -->
+<div class="modal fade" id="validateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Valider le paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir valider ce paiement ?</p>
+                <div class="mb-3">
+                    <label for="validateNotes" class="form-label">Notes (optionnel)</label>
+                    <textarea class="form-control" id="validateNotes" rows="2" placeholder="Notes de validation..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="confirmValidate()">Valider</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de rejet -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rejeter le paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir rejeter ce paiement ?</p>
+                <div class="mb-3">
+                    <label for="rejectReason" class="form-label">Raison du rejet *</label>
+                    <textarea class="form-control" id="rejectReason" rows="3" placeholder="Expliquez pourquoi vous rejetez ce paiement..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReject()">Rejeter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+let currentSubmissionId = '';
+
+function validateSubmission(id) {
+    currentSubmissionId = id;
+    document.getElementById('validateNotes').value = '';
+    new bootstrap.Modal(document.getElementById('validateModal')).show();
+}
+
+function rejectSubmission(id) {
+    currentSubmissionId = id;
+    document.getElementById('rejectReason').value = '';
+    new bootstrap.Modal(document.getElementById('rejectModal')).show();
+}
+
+function confirmValidate() {
+    const notes = document.getElementById('validateNotes').value;
+    
+    fetch(`/payments/submission/validate/${currentSubmissionId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: new URLSearchParams({
+            'notes': notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Paiement validé avec succès', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('validateModal')).hide();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showToast(data.error || 'Erreur lors de la validation', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Erreur technique. Veuillez réessayer.', 'danger');
+    });
+}
+
+function confirmReject() {
+    const reason = document.getElementById('rejectReason').value;
+    
+    if (!reason.trim()) {
+        showToast('Veuillez entrer une raison de rejet', 'warning');
+        return;
+    }
+    
+    fetch(`/payments/submission/reject/${currentSubmissionId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: new URLSearchParams({
+            'reason': reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Paiement rejeté avec succès', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showToast(data.error || 'Erreur lors du rejet', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Erreur technique. Veuillez réessayer.', 'danger');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    
+    const bgClass = type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info';
+    
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header ${bgClass} text-white">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>
+{% endblock %}

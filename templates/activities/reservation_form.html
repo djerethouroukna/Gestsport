@@ -1,0 +1,427 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Réserver pour l'activité" %} - {{ activity.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    
+                    {% trans "Réserver pour une activité" %}
+                </h1>
+                <a href="{% url 'activities:activity_detail' activity.id %}" class="btn btn-outline-info">
+                    
+                    {% trans "Retour" %}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations de l'activité -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        
+                        {% trans "Détails de l'activité" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>{% trans "Titre" %}:</strong> {{ activity.title }}</p>
+                            <p><strong>{% trans "Type" %}:</strong> 
+                                <span class="badge bg-info">{{ activity.get_activity_type_display }}</span>
+                            </p>
+                            <p><strong>{% trans "Coach" %}:</strong> {{ activity.coach.get_full_name|default:activity.coach.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>{% trans "Date et heure" %}:</strong> {{ activity.start_time|date:"d/m/Y H:i" }}</p>
+                            <p><strong>{% trans "Durée" %}:</strong> {{ activity.duration_minutes }} {% trans "minutes" %}</p>
+                            <p><strong>{% trans "Statut" %}:</strong> 
+                                <span class="badge bg-success">{{ activity.get_status_display }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information importante 
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle fa-2x me-3"></i>
+                    <div>
+                        <h6 class="mb-1">{% trans "Réservation automatiquement liée à l'activité" %}</h6>
+                        <p class="mb-0 small">
+                            {% trans "Les heures de début et de fin sont automatiquement importées de l'activité et ne peuvent pas être modifiées. Seul le terrain peut être sélectionné." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>-->
+
+    <!-- Formulaire de réservation -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        
+                        {% trans "Formulaire de réservation" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="reservation-form">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.terrain.id_for_label }}" class="form-label">
+                                        
+                                        {% trans "Terrain" %} 
+                                    </label>
+                                    {{ form.terrain }}
+                                    {% if form.terrain.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.terrain.errors }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.start_time.id_for_label }}" class="form-label">
+                                        
+                                        {% trans "Heure de début" %} 
+                                    </label>
+                                    <div class="form-control bg-light">
+                                        <i class="fas fa-lock me-2 text-muted"></i>
+                                        {{ activity.start_time|date:"d/m/Y H:i" }}
+                                    </div>
+                                    <input type="hidden" name="start_time" value="{{ activity.start_time|date:"Y-m-d H:i" }}">
+                                    
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.end_time.id_for_label }}" class="form-label">
+                                        
+                                        {% trans "Heure de fin" %} 
+                                    </label>
+                                    <div class="form-control bg-light">
+                                        <i class="fas fa-lock me-2 text-muted"></i>
+                                        {{ activity.end_time|date:"d/m/Y H:i" }}
+                                    </div>
+                                    <input type="hidden" name="end_time" value="{{ activity.end_time|date:"Y-m-d H:i" }}">
+                                    
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                        
+                                        {% trans "Notes" %}
+                                    </label>
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.notes.errors }}
+                                        </div>
+                                    {% endif %}
+                                   
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Informations de prix 
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle me-2"></i>{% trans "Informations de réservation" %}</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>{% trans "Durée" %}:</strong> 
+                                            <span id="duration-display">--</span> {% trans "heures" %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>{% trans "Prix par heure" %}:</strong> 
+                                            <span id="price-per-hour">--</span> XOF
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>{% trans "Total estimé" %}:</strong> 
+                                            <span id="total-estimated" class="text-success fw-bold">--</span> XOF
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>-->
+
+                        <!-- Options de paiement -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">
+                                            
+                                            {% trans "Options de paiement" %}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <div class="form-check form-check-radio">
+                                                    <input class="form-check-input" type="radio" name="payment_option" id="payment_later" value="later" checked>
+                                                    <label class="form-check-label" for="payment_later">
+                                                        <i class="fas fa-clock me-2"></i>
+                                                        {% trans "Payer plus tard" %}
+                                                        
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="form-check form-check-radio">
+                                                    <input class="form-check-input" type="radio" name="payment_option" id="payment_now" value="now">
+                                                    <label class="form-check-label" for="payment_now">
+                                                        
+                                                        {% trans "Payer maintenant" %}
+                                                        
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="payment-now-section" style="display: none;">
+                                            <div class="alert alert-success">
+                                                
+                                                {% trans "Le paiement sera traité et un Code sera généré pour votre réservation." %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'activities:activity_detail' activity.id %}" class="btn btn-outline-secondary">
+                                        
+                                        {% trans "Annuler" %}
+                                    </a>
+                                    <div class="btn-group">
+                                        <button type="submit" class="btn btn-success" id="submit-reservation">
+                                            
+                                            {% trans "Créer la réservation" %}
+                                        </button>
+                                        <button type="button" class="btn btn-info" id="pay-now-btn" style="display: none;">
+                                            
+                                            {% trans "Payer et générer QR" %}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processus de confirmation -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        
+                        {% trans "Pour une confirmation" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>{% trans "Vous soumettez cette réservation" %}</li>
+                        <li>{% trans "L'administrateur reçoit une notification" %}</li>
+                        <li>{% trans "L'administrateur confirme ou rejette la réservation" %}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const terrainSelect = document.getElementById('{{ form.terrain.id_for_label }}');
+    const paymentLaterRadio = document.getElementById('payment_later');
+    const paymentNowRadio = document.getElementById('payment_now');
+    const paymentNowSection = document.getElementById('payment-now-section');
+    const submitBtn = document.getElementById('submit-reservation');
+    const payNowBtn = document.getElementById('pay-now-btn');
+    
+    // Gestion des options de paiement
+    paymentLaterRadio.addEventListener('change', function() {
+        if (this.checked) {
+            paymentNowSection.style.display = 'none';
+            submitBtn.style.display = 'inline-block';
+            payNowBtn.style.display = 'none';
+        }
+    });
+    
+    paymentNowRadio.addEventListener('change', function() {
+        if (this.checked) {
+            paymentNowSection.style.display = 'block';
+            submitBtn.style.display = 'none';
+            payNowBtn.style.display = 'inline-block';
+        }
+    });
+    
+    // Bouton payer maintenant
+    payNowBtn.addEventListener('click', function() {
+        const form = document.getElementById('reservation-form');
+        const formData = new FormData(form);
+        formData.append('pay_now', 'true');
+        
+        // Créer une requête AJAX pour créer la réservation et payer
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Rediriger vers Stripe ou afficher le QR code
+                if (data.payment_url) {
+                    window.location.href = data.payment_url;
+                } else if (data.qr_code) {
+                    showQRCode(data.qr_code, data.reservation_id);
+                }
+            } else {
+                alert('Erreur: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+        });
+    });
+    
+    // Données des terrains (à adapter selon vos données)
+    const terrainPrices = {
+        {% for terrain in terrains %}
+        '{{ terrain.id }}': {{ terrain.price_per_hour|default:20.00 }},
+        {% endfor %}
+    };
+    
+    function calculatePrice() {
+        const terrainId = terrainSelect.value;
+        const startTime = '{{ activity.start_time|date:"H:i" }}';
+        const endTime = '{{ activity.end_time|date:"H:i" }}';
+        
+        if (terrainId && startTime && endTime) {
+            const pricePerHour = terrainPrices[terrainId] || 20.00;
+            const start = new Date(`2000-01-01T${startTime}`);
+            const end = new Date(`2000-01-01T${endTime}`);
+            const duration = (end - start) / (1000 * 60 * 60); // heures
+            
+            if (duration > 0) {
+                const total = duration * pricePerHour;
+                
+                document.getElementById('duration-display').textContent = duration.toFixed(1);
+                document.getElementById('price-per-hour').textContent = pricePerHour.toFixed(2);
+                document.getElementById('total-estimated').textContent = total.toFixed(2);
+            } else {
+                resetDisplay();
+            }
+        } else {
+            resetDisplay();
+        }
+    }
+    
+    function showQRCode(qrCode, reservationId) {
+        // Créer un modal pour afficher le QR code
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-qrcode me-2"></i>
+                            QR Code de Réservation
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <strong>Réservation #${reservationId}</strong>
+                        </div>
+                        <img src="${qrCode}" alt="QR Code" class="img-fluid" style="max-width: 300px;">
+                        <div class="mt-3">
+                            <p class="text-muted">Présentez ce QR code à l'arrivée</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <a href="/reservations/${reservationId}/" class="btn btn-primary">Voir la réservation</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        const modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
+        
+        modal.addEventListener('hidden.bs.modal', function() {
+            document.body.removeChild(modal);
+        });
+    }
+    
+    function resetDisplay() {
+        document.getElementById('duration-display').textContent = '--';
+        document.getElementById('price-per-hour').textContent = '--';
+        document.getElementById('total-estimated').textContent = '--';
+    }
+    
+    // Écouteurs d'événements
+    terrainSelect.addEventListener('change', calculatePrice);
+    startTimeInput.addEventListener('change', calculatePrice);
+    endTimeInput.addEventListener('change', calculatePrice);
+    
+    // Initialisation
+    calculatePrice();
+});
+</script>
+{% endblock %}

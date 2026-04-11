@@ -1,0 +1,326 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Joueur - GestSport{% endblock %}
+
+{% block breadcrumb %}Dashboard Joueur{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card primary">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">MES RÉSERVATIONS</div>
+                    <div class="stat-value">{{ my_reservations|length }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>12.5%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+            <canvas id="myReservationsChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card success">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">CRÉDITS</div>
+                    <div class="stat-value">
+                        {% if available_credits %}
+                            {{ available_credits.0.amount|default:0 }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+50
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+            </div>
+            <canvas id="creditsChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card info">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">ABONNEMENT</div>
+                    <div class="stat-value">
+                        {% if active_subscription %}
+                            ACTIF
+                        {% else %}
+                            AUCUN
+                        {% endif %}
+                    </div>
+                    <div class="stat-change">
+                        {% if active_subscription %}
+                            <i class="fas fa-check me-1"></i>Valide
+                        {% else %}
+                            <i class="fas fa-times me-1"></i>Inactif
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+            </div>
+            <canvas id="subscriptionChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card warning">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">ACTIVITÉS</div>
+                    <div class="stat-value">6</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>20.0%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-running"></i>
+                </div>
+            </div>
+            <canvas id="activitiesChart" height="60"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Subscription Status -->
+{% if active_subscription %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Statut de l'abonnement</h6>
+                <span class="badge bg-success">ACTIF</span>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h5 mb-1">{{ active_subscription.plan.name }}</div>
+                        <div class="small text-muted">Type d'abonnement</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h5 mb-1">{{ active_subscription.end_date|date:"d/m/Y" }}</div>
+                        <div class="small text-muted">Date d'expiration</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h5 mb-1">{{ active_subscription.remaining_sessions|default:"Illimité" }}</div>
+                        <div class="small text-muted">Sessions restantes</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <a href="#" class="btn btn-sm btn-primary">Renouveler</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Reservations -->
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">Mes Réservations à Venir</h6>
+                <a href="{% url 'reservations:reservation_list' %}" class="btn btn-sm btn-primary">
+                    Voir tout
+                </a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Terrain</th>
+                            <th>Date</th>
+                            <th>Heure</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in my_reservations %}
+                        <tr>
+                            <td>
+                                <strong>{{ reservation.terrain.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ reservation.terrain.get_terrain_type_display }}</small>
+                            </td>
+                            <td>{{ reservation.start_time|date:"d/m/Y" }}</td>
+                            <td>{{ reservation.start_time|date:"H:i" }} - {{ reservation.end_time|date:"H:i" }}</td>
+                            <td>
+                                <span class="badge bg-{% if reservation.status == 'confirmed' %}success{% elif reservation.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                    {{ reservation.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'reservations:reservation_detail' reservation.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if reservation.status == 'pending' %}
+                                <a href="{% url 'reservations:reservation_edit' reservation.id %}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fas fa-calendar-times fa-2x mb-2 d-block"></i>
+                                Aucune réservation trouvée
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-lg-5">
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">Quick Actions</h6>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'terrains:terrain_list' %}" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>
+                    Réserver un terrain
+                </a>
+                <a href="{% url 'activities:activity_list' %}" class="btn btn-success">
+                    <i class="fas fa-running me-2"></i>
+                    Voir les activités
+                </a>
+                {% if not active_subscription %}
+                <a href="#" class="btn btn-warning">
+                    <i class="fas fa-crown me-2"></i>
+                    S'abonner
+                </a>
+                {% endif %}
+                <a href="{% url 'users:profile' %}" class="btn btn-info">
+                    <i class="fas fa-user me-2"></i>
+                    Mon profil
+                </a>
+            </div>
+        </div>
+        
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">Mes Crédits</h6>
+            
+            {% if available_credits %}
+                {% for credit in available_credits %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <div class="fw-semibold">{{ credit.amount }} crédits</div>
+                        <div class="small text-muted">
+                            Expire le {{ credit.expires_at|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                    <span class="badge bg-{% if credit.amount > 10 %}success{% elif credit.amount > 5 %}warning{% else %}danger{% endif %}">
+                        {{ credit.amount }}
+                    </span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-coins fa-2x mb-2 d-block"></i>
+                    Aucun crédit disponible
+                </div>
+                <a href="#" class="btn btn-sm btn-primary w-100">Acheter des crédits</a>
+            {% endif %}
+        </div>
+        
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">Progression</h6>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Réservations ce mois</div>
+                    <div class="small">8/10</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: 80%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Objectif activité</div>
+                    <div class="small">65%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: 65%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Niveau joueur</div>
+                    <div class="small">3</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-warning" style="width: 45%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mini Charts for Stats Cards
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts
+createMiniChart('myReservationsChart', [15, 18, 20, 17, 22, 19, 20], '#4e73df');
+createMiniChart('creditsChart', [50, 45, 55, 48, 60, 52, 55], '#1cc88a');
+createMiniChart('subscriptionChart', [1, 1, 1, 1, 1, 1, 1], '#36b9cc');
+createMiniChart('activitiesChart', [4, 5, 6, 5, 7, 6, 6], '#f6c23e');
+</script>
+{% endblock %}

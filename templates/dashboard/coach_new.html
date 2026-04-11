@@ -1,0 +1,287 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}Dashboard Entraineur - GestSport{% endblock %}
+
+{% block breadcrumb %}Dashboard Entraineur{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                
+                <p>{{ total_reservations }} RÉSERVATIONS</p>
+            </div>
+            <div class="card-bottom">
+                <p>+15.3%</p>
+                <canvas id="myReservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2></h2>
+                <p>{{ pending_count }} EN ATTENTE</p>
+            </div>
+            <div class="card-bottom">
+                <p>-5.2%</p>
+                <canvas id="pendingChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2></h2>
+                <p>{{ favorite_terrains }} FAVORIS</p>
+            </div>
+            <div class="card-bottom">
+                <p>+25.0%</p>
+                <canvas id="favoritesChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2></h2>
+                <p>{{ total_activities }} ACTIVITÉS</p>
+            </div>
+            <div class="card-bottom">
+                <p>+8.7%</p>
+                <canvas id="activitiesChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reservations -->
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">Mes Réservations Récentes</h6>
+                <a href="{% url 'reservations:reservation_list' %}" class="btn btn-info">
+                    Voir tout
+                </a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Terrain</th>
+                            <th>Date</th>
+                            <th>Heure</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in my_reservations %}
+                        <tr>
+                            <td>
+                                <strong>{{ reservation.terrain.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ reservation.terrain.get_terrain_type_display }}</small>
+                            </td>
+                            <td>{{ reservation.start_time|date:"d/m/Y" }}</td>
+                            <td>{{ reservation.start_time|date:"H:i" }} - {{ reservation.end_time|date:"H:i" }}</td>
+                            <td>
+                                <span class="badge bg-{% if reservation.status == 'confirmed' %}success{% elif reservation.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                    {{ reservation.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'reservations:reservation_detail' reservation.id %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if reservation.status == 'pending' %}
+                                <a href="{% url 'reservations:reservation_edit' reservation.id %}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fas fa-calendar-times fa-2x mb-2 d-block"></i>
+                                Aucune réservation trouvée
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-lg-5">
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">Performance</h6>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Taux de réservation</div>
+                    <div class="small">{{ reservation_rate|floatformat:0 }}%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: {{ reservation_rate|floatformat:0 }}%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Présence ce mois</div>
+                    <div class="small">{{ presence_rate|floatformat:0 }}%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: {{ presence_rate|floatformat:0 }}%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Satisfaction</div>
+                    <div class="small">{{ satisfaction_score|floatformat:1 }}/5</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-warning" style="width: {{ satisfaction_percentage }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mini Charts for Stats Cards
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts
+createMiniChart('myReservationsChart', [20, 25, 30, 28, 35, 32, 35], '#4e73df');
+createMiniChart('pendingChart', [5, 8, 6, 4, 7, 5, 6], '#1cc88a');
+createMiniChart('favoritesChart', [8, 8, 9, 8, 10, 9, 8], '#36b9cc');
+createMiniChart('activitiesChart', [10, 12, 11, 13, 12, 14, 12], '#f6c23e');
+</script>
+{% endblock %}

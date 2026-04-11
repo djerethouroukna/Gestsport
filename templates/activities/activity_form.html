@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Créer / Modifier Activité - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{% url 'activities:activity_list' %}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="fas fa-arrow-left me-1"></i>Retour aux activités
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Informations activité</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Titre</label>
+                            {{ form.title|as_crispy_field }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description</label>
+                            {{ form.description|as_crispy_field }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Terrain</label>
+                            {{ form.terrain|as_crispy_field }}
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Début</label>
+                                {{ form.start_time|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Fin</label>
+                                {{ form.end_time|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <div>
+                                <button type="button" class="btn btn-outline-secondary me-2" id="checkActivityAvailability">Vérifier disponibilité</button>
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                <a href="{% url 'activities:activity_list' %}" class="btn btn-outline-secondary ms-2">Annuler</a>
+                            </div>
+                            <div id="activityAvailabilityResult" class="text-end small"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    var checkBtn = document.getElementById('checkActivityAvailability');
+    var resDiv = document.getElementById('activityAvailabilityResult');
+    if(!checkBtn) return;
+
+    checkBtn.addEventListener('click', function(){
+        var terrain = document.querySelector('select[name="terrain"]').value;
+        var start = document.querySelector('input[name="start_time"]').value;
+        var end = document.querySelector('input[name="end_time"]').value;
+        resDiv.textContent = '';
+        if(!terrain || !start || !end){ resDiv.textContent = 'Veuillez renseigner terrain, début et fin.'; return; }
+
+        var formData = new FormData();
+        formData.append('terrain_id', terrain);
+        formData.append('start_datetime', new Date(start).toISOString());
+        formData.append('end_datetime', new Date(end).toISOString());
+
+        function getCookie(name){
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== ''){
+                var cookies = document.cookie.split(';');
+                for(var i=0;i<cookies.length;i++){
+                    var cookie = cookies[i].trim();
+                    if(cookie.substring(0, name.length+1) === (name+'=')){
+                        cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        var csrftoken = getCookie('csrftoken') || (document.querySelector('input[name="csrfmiddlewaretoken"]') && document.querySelector('input[name="csrfmiddlewaretoken"]') .value);
+        fetch('{% url "reservations:check_availability" %}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': csrftoken },
+            body: formData
+        }).then(function(resp){ if(!resp.ok) throw new Error('HTTP ' + resp.status); return resp.json(); }).then(function(data){
+            if(data.success){
+                if(data.available){ resDiv.innerHTML = '<span class="text-success">Disponible</span>'; }
+                else { resDiv.innerHTML = '<span class="text-warning">Indisponible (' + (data.conflicts||[]).length + ' conflits)</span>'; }
+            } else { resDiv.innerHTML = '<span class="text-danger">Erreur: ' + (data.error || 'inconnue') + '</span>'; }
+        }).catch(function(err){ resDiv.innerHTML = '<span class="text-danger">Erreur réseau: ' + (err.message || err) + '</span>'; });
+    });
+})();
+</script>
+
+{% endblock %}

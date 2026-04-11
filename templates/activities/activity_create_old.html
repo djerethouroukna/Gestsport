@@ -1,0 +1,368 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Créer une Activité - GestSport{% endblock %}
+
+{% block breadcrumb %}Créer une Activité{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        <i class="fas fa-plus-circle me-3"></i>
+                        Créer une Activité Sportive
+                    </h2>
+                    <p class="mb-0 opacity-75">
+                        Organisez une nouvelle activité sportive pour vos participants
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'activities:activity_list' %}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Retour à la liste
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-running me-2"></i>
+                    Informations de l'Activité
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" id="activityForm" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Informations principales -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">Informations Principales</h6>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="title" class="form-label fw-semibold">Titre de l'activité *</label>
+                                <input type="text" class="form-control form-control-lg" name="title" id="title" required>
+                                <div class="invalid-feedback">
+                                    Veuillez saisir un titre pour l'activité.
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="activity_type" class="form-label fw-semibold">Type d'activité *</label>
+                                <select class="form-select form-select-lg" name="activity_type" id="activity_type" required>
+                                    <option value="">-- Type --</option>
+                                    <option value="training">Entraînement</option>
+                                    <option value="match">Match</option>
+                                    <option value="tournament">Tournoi</option>
+                                    <option value="other">Autre</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner un type d'activité.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <label for="description" class="form-label fw-semibold">Description</label>
+                            <textarea class="form-control" name="description" id="description" rows="4" placeholder="Décrivez l'activité, les objectifs, le déroulement..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Organisation -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">Organisation</h6>
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label for="max_participants" class="form-label fw-semibold">Nombre maximum de participants *</label>
+                                <input type="number" class="form-control" name="max_participants" id="max_participants" min="1" required>
+                                <div class="invalid-feedback">
+                                    Veuillez spécifier un nombre de participants.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Planning -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">Planning</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="start_time" class="form-label fw-semibold">Date et heure de début *</label>
+                                <input type="datetime-local" class="form-control" name="start_time" id="start_time" required>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner une date de début.
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="end_time" class="form-label fw-semibold">Date et heure de fin *</label>
+                                <input type="datetime-local" class="form-control" name="end_time" id="end_time" required>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner une date de fin.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Résumé -->
+                    <div class="alert alert-light border mb-4">
+                        <h6 class="fw-bold mb-3">Résumé de l'Activité</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <span class="text-muted">Activité :</span>
+                                    <span class="fw-semibold" id="summaryTitle">-</span>
+                                </div>
+                                                                <div class="mb-2">
+                                    <span class="text-muted">Date :</span>
+                                    <span class="fw-semibold" id="summaryDate">-</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <span class="text-muted">Durée :</span>
+                                    <span class="fw-semibold" id="summaryDuration">-</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted">Participants :</span>
+                                    <span class="fw-semibold" id="summaryParticipants">-</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted">Coût estimé :</span>
+                                    <span class="fw-semibold text-primary" id="summaryCost">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages de disponibilité -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">Vérification de Disponibilité</h6>
+                        
+                        <!-- Message d'indisponibilité -->
+                        <div id="availabilityMessage" style="display: none; background: #ff0000; color: white; padding: 20px; border-radius: 5px; font-weight: bold; font-size: 18px; text-align: center; margin: 10px 0;">
+                            ⚠️ TERRAIN INDISPONIBLE
+                            <div id="availabilityDetails" style="margin-top: 10px; font-size: 14px;">Veuillez vérifier les informations saisies</div>
+                        </div>
+                        
+                        <!-- Message de disponibilité -->
+                        <div id="availableMessage" style="display: none; background: #00ff00; color: black; padding: 20px; border-radius: 5px; font-weight: bold; font-size: 18px; text-align: center; margin: 10px 0;">
+                            ✅ TERRAIN DISPONIBLE
+                            <div style="margin-top: 10px; font-size: 14px;">Ce créneau horaire est libre pour réservation</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                                                    </div>
+                        <div>
+                            <a href="{% url 'activities:activity_list' %}" class="btn btn-outline-secondary me-2">Annuler</a>
+                            <button type="submit" class="btn btn-primary btn-lg" id="createActivityBtn">
+                                <i class="fas fa-save me-2"></i>
+                                Créer l'activité
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Informations
+                </h6>
+                <p class="text-muted small mb-0">
+                    Après avoir créé cette activité, vous pourrez réserver le terrain pour le créneau horaire sélectionné. 
+                    Le système vérifiera automatiquement la disponibilité avant de procéder à la réservation.
+                </p>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Conseils
+                </h6>
+                <ul class="small text-muted mb-0">
+                    <li class="mb-2">Prévoyez suffisamment de temps pour l'activité</li>
+                    <li class="mb-2">Limitez le nombre de participants selon l'espace disponible</li>
+                    <li class="mb-2">Décrivez clairement les objectifs de l'activité</li>
+                    <li class="mb-2">Pensez au matériel nécessaire pour l'activité</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Aide
+                </h6>
+                <div class="small text-muted">
+                    <p class="mb-2"><strong>Entraînement :</strong> Séance d'entraînement régulière</p>
+                    <p class="mb-2"><strong>Match :</strong> Compétition entre équipes</p>
+                    <p class="mb-2"><strong>Tournoi :</strong> Compétition avec plusieurs équipes</p>
+                    <p class="mb-0"><strong>Autre :</strong> Activité personnalisée</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('activityForm');
+    const startTime = document.getElementById('start_time');
+    const endTime = document.getElementById('end_time');
+    const maxParticipants = document.getElementById('max_participants');
+    const title = document.getElementById('title');
+    
+    // Résumé
+    function updateSummary() {
+        const start = startTime.value ? new Date(startTime.value) : null;
+        const end = endTime.value ? new Date(endTime.value) : null;
+        
+        // Mise à jour du résumé
+        document.getElementById('summaryTitle').textContent = title.value || '-';
+        document.getElementById('summaryDate').textContent = start ? start.toLocaleString() : '-';
+        document.getElementById('summaryParticipants').textContent = maxParticipants.value ? `${maxParticipants.value} max` : '-';
+        
+        if (start && end) {
+            const duration = (end - start) / (1000 * 60 * 60); // en heures
+            document.getElementById('summaryDuration').textContent = duration > 0 ? `${duration.toFixed(1)}h` : '-';
+        } else {
+            document.getElementById('summaryDuration').textContent = '-';
+        }
+    }
+        
+        // Appel AJAX pour vérifier la disponibilité
+        fetch(`/api/timeslots/timeslots/check_availability/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                terrain_id: parseInt(terrainId),
+                date: start.split('T')[0],
+                start_time: start.split('T')[1] || '00:00:00',
+                end_time: end.split('T')[1] || '00:00:00'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_available) {
+                showAvailabilityMessage('Ce créneau horaire est libre pour réservation', 'success');
+            } else {
+                let message = 'Ce terrain n\'est pas disponible pour la période sélectionnée.';
+                if (data.conflicts && data.conflicts.length > 0) {
+                    message += ' Conflits détectés.';
+                }
+                showAvailabilityMessage(message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            hideAvailabilityMessages();
+        });
+    }
+    
+    function showAvailabilityMessage(message, type) {
+        const availabilityMessage = document.getElementById('availabilityMessage');
+        const availableMessage = document.getElementById('availableMessage');
+        
+        // Cacher tous les messages
+        availabilityMessage.style.display = 'none';
+        availableMessage.style.display = 'none';
+        
+        if (type === 'success') {
+            availableMessage.innerHTML = `
+                ✅ TERRAIN DISPONIBLE
+                <div style="margin-top: 10px; font-size: 14px;">${message}</div>
+            `;
+            availableMessage.style.display = 'block';
+        } else if (type === 'danger') {
+            availabilityMessage.innerHTML = `
+                ⚠️ TERRAIN INDISPONIBLE
+                <div id="availabilityDetails" style="margin-top: 10px; font-size: 14px;">${message}</div>
+            `;
+            availabilityMessage.style.display = 'block';
+        } else if (type === 'info') {
+            availabilityMessage.innerHTML = `
+                ℹ️ VÉRIFICATION EN COURS
+                <div id="availabilityDetails" style="margin-top: 10px; font-size: 14px;">${message}</div>
+            `;
+            availabilityMessage.style.display = 'block';
+        }
+    }
+    
+    function hideAvailabilityMessages() {
+        document.getElementById('availabilityMessage').style.display = 'none';
+        document.getElementById('availableMessage').style.display = 'none';
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Écouteurs d'événements
+    terrainSelect.addEventListener('change', updateSummary);
+    startTime.addEventListener('change', updateSummary);
+    endTime.addEventListener('change', updateSummary);
+    maxParticipants.addEventListener('input', updateSummary);
+    title.addEventListener('input', updateSummary);
+    
+    document.getElementById('checkAvailabilityBtn').addEventListener('click', checkAvailability);
+    
+    // Validation du formulaire
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        if (end.value && start.value) {
+            const end = new Date(end.value);
+            const start = new Date(start.value);
+            
+            if (end <= start) {
+                e.preventDefault();
+                alert('La date de fin doit être postérieure à la date de début');
+                endTime.focus();
+                return;
+            }
+        }
+        
+        form.classList.add('was-validated');
+    });
+    
+    // Initialisation
+    updateSummary();
+});
+</script>
+{% endblock %}

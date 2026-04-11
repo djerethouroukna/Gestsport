@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mon Profil - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        {% include 'shared/sidebar.html' %}
+        
+        <div class="col-lg-8">
+            <h2 class="fw-bold mb-4">
+                <i class="fas fa-user-circle me-2"></i>Mon Profil
+            </h2>
+            
+            <!-- En-tête profil -->
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            <i class="fas fa-user-circle fa-5x text-primary"></i>
+                        </div>
+                        <div class="col-md-7">
+                            <h4>{{ user.get_full_name }}</h4>
+                            <p class="text-muted mb-2">{{ user.email }}</p>
+                            <div>
+                                <span class="badge bg-primary">{{ user.get_role_display }}</span>
+                                <span class="badge bg-{% if user.is_active %}success{% else %}danger{% endif %}">
+                                    {% if user.is_active %}Actif{% else %}Inactif{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-md-end">
+                            <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>Modifier le Profil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informations personnelles -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Informations Personnelles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Prénom</strong></p>
+                            <p>{{ user.first_name|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Nom</strong></p>
+                            <p>{{ user.last_name|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Email</strong></p>
+                            <p>{{ user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Téléphone</strong></p>
+                            <p>{{ user.phone|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Date de Naissance</strong></p>
+                            <p>{{ user.date_of_birth|date:"d/m/Y"|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Ville</strong></p>
+                            <p>{{ user.city|default:"Non renseigné" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Adresse -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Adresse</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Adresse</strong></p>
+                            <p>{{ user.address|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Code Postal</strong></p>
+                            <p>{{ user.postal_code|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted mb-1"><strong>Pays</strong></p>
+                            <p>{{ user.country|default:"Non renseigné" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistiques -->
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calendar fa-2x text-primary mb-2 d-block"></i>
+                            <h4>{{ reservations_count }}</h4>
+                            <p class="text-muted mb-0">Réservations</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-running fa-2x text-success mb-2 d-block"></i>
+                            <h4>{{ activities_count }}</h4>
+                            <p class="text-muted mb-0">Activités</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-credit-card fa-2x text-warning mb-2 d-block"></i>
+                            <h4>{{ total_spent }} FCFA</h4>
+                            <p class="text-muted mb-0">Dépenses</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

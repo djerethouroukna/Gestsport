@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajouter Terrain - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <a href="{% url 'terrains:terrain_list' %}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="fas fa-arrow-left me-1"></i>Retour
+            </a>
+            
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>Ajouter un Nouveau Terrain
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" class="form">
+                        {% csrf_token %}
+                        
+                        <!-- Informations de base -->
+                        <h5 class="mb-3 fw-bold">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Informations de Base
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">Nom *</label>
+                                {{ form.name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.terrain_type.id_for_label }}" class="form-label fw-bold">Type *</label>
+                                {{ form.terrain_type }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">Description</label>
+                            {{ form.description }}
+                        </div>
+                        
+                        <!-- Détails -->
+                        <h5 class="mb-3 fw-bold mt-4">
+                            <i class="fas fa-cog me-2 text-primary"></i>Détails
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.capacity.id_for_label }}" class="form-label fw-bold">Capacité *</label>
+                                {{ form.capacity }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.price_per_hour.id_for_label }}" class="form-label fw-bold">Prix/Heure *</label>
+                                {{ form.price_per_hour }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.status.id_for_label }}" class="form-label fw-bold">Statut</label>
+                                {{ form.status }}
+                            </div>
+                        </div>
+                        
+                        <!-- Image -->
+                        <h5 class="mb-3 fw-bold mt-4">
+                            <i class="fas fa-image me-2 text-primary"></i>Image
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.image.id_for_label }}" class="form-label fw-bold">URL Image Principale</label>
+                            {{ form.image }}
+                            <small class="text-muted">Entrez l'URL complète de l'image (https://...)</small>
+                        </div>
+                        
+                        <!-- Boutons -->
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Enregistrer le Terrain
+                            </button>
+                            <a href="{% url 'terrains:terrain_list' %}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-times me-2"></i>Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input, textarea, select {
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+        padding: 0.75rem;
+    }
+    input:focus, textarea:focus, select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+</style>
+{% endblock %}

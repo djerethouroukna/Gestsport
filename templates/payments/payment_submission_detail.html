@@ -1,0 +1,230 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Détails Soumission #{{ submission.id|truncatechars:8 }} - GestSport{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">Soumission #{{ submission.id|truncatechars:8 }}</h2>
+                    <p class="mb-1">Réservation #{{ submission.reservation.id }} — {{ submission.reservation.terrain.name }}</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="h3 mb-0">{{ submission.amount }} {{ submission.currency }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-8">
+        <!-- Réservation -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4"><i class="fas fa-calendar me-2 text-primary"></i>Réservation</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <small class="text-muted">ID</small>
+                    <div class="fw-semibold">#{{ submission.reservation.id }}</div>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Terrain</small>
+                    <div class="fw-semibold">{{ submission.reservation.terrain.name }}</div>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Date</small>
+                    <div class="fw-semibold">{{ submission.reservation.start_time|date:'d/m/Y H:i' }}</div>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Durée</small>
+                    <div class="fw-semibold">{{ duration }} heures</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paiement -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4"><i class="fas fa-credit-card me-2 text-info"></i>Paiement</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <small class="text-muted">Méthode</small>
+                    <div class="fw-semibold">
+                        {% if submission.payment_method_type == 'card' %}
+                        <i class="fas fa-credit-card text-primary me-2"></i>Carte
+                        {% else %}
+                        <i class="fas fa-mobile-alt text-success me-2"></i>Mobile
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Montant</small>
+                    <div class="fw-semibold">{{ submission.amount }} {{ submission.currency }}</div>
+                </div>
+                {% if submission.payment_method_type == 'card' %}
+                <div class="col-md-6">
+                    <small class="text-muted">Carte</small>
+                    <div class="fw-semibold">****{{ submission.card_last_four }}</div>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Porteur</small>
+                    <div class="fw-semibold">{{ submission.card_holder_name }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4">
+        <!-- Actions -->
+        {% if can_validate %}
+        <div class="progress-card mb-4">
+            <h6 class="mb-4"><i class="fas fa-cogs me-2 text-primary"></i>Actions</h6>
+            <div class="d-grid gap-2">
+                <button class="btn btn-success" onclick="validateSubmission()">
+                    <i class="fas fa-check me-2"></i>Valider
+                </button>
+                <button class="btn btn-danger" onclick="rejectSubmission()">
+                    <i class="fas fa-times me-2"></i>Rejeter
+                </button>
+                <a href="{% url 'payments:payment-list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Retour
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Statut -->
+        <div class="progress-card">
+            <h6 class="mb-4"><i class="fas fa-info-circle me-2 text-warning"></i>Statut</h6>
+            {% if submission.status == 'submitted' %}
+            <span class="badge bg-warning text-dark w-100">
+                <i class="fas fa-clock me-1"></i>Soumis
+            </span>
+            {% elif submission.status == 'validated' %}
+            <span class="badge bg-success w-100">
+                <i class="fas fa-check me-1"></i>Validé
+            </span>
+            {% elif submission.status == 'rejected' %}
+            <span class="badge bg-danger w-100">
+                <i class="fas fa-times me-1"></i>Rejeté
+            </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="validateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Valider le paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="validateNotes" placeholder="Notes (optionnel)..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="confirmValidate()">Valider</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rejeter le paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="rejectReason" placeholder="Raison du rejet..." required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" onclick="confirmReject()">Rejeter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function validateSubmission() {
+    new bootstrap.Modal(document.getElementById('validateModal')).show();
+}
+
+function rejectSubmission() {
+    new bootstrap.Modal(document.getElementById('rejectModal')).show();
+}
+
+function confirmValidate() {
+    const notes = document.getElementById('validateNotes').value;
+    
+    fetch(`/payments/submission/validate/{{ submission.id }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: new URLSearchParams({'notes': notes})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Paiement validé', 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        }
+    });
+}
+
+function confirmReject() {
+    const reason = document.getElementById('rejectReason').value;
+    
+    fetch(`/payments/submission/reject/{{ submission.id|stringformat:"s" }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: new URLSearchParams({'reason': reason})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Paiement rejeté', 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `<div class="toast show"><div class="toast-header bg-${type} text-white"><strong>Notification</strong></div><div class="toast-body">${message}</div></div>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>
+{% endblock %}

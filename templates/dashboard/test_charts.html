@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Graphiques</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Test des Graphiques</h1>
+    
+    <div style="width: 400px; margin: 20px;">
+        <canvas id="testChart"></canvas>
+    </div>
+    
+    <div style="width: 400px; margin: 20px;">
+        <canvas id="testChart2"></canvas>
+    </div>
+    
+    <script>
+        console.log('Début du test des graphiques');
+        
+        // Test 1: Graphique simple avec données fixes
+        const ctx1 = document.getElementById('testChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai'],
+                datasets: [{
+                    label: 'Test',
+                    data: [10, 20, 15, 25, 30],
+                    borderColor: '#2ECC71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Test 2: Graphique doughnut
+        const ctx2 = document.getElementById('testChart2').getContext('2d');
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['A', 'B', 'C'],
+                datasets: [{
+                    data: [30, 40, 30],
+                    backgroundColor: ['#2ECC71', '#3498db', '#f39c12']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+        
+        console.log('Graphiques créés avec succès');
+    </script>
+</body>
+</html>

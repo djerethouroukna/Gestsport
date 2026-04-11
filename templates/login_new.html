@@ -1,0 +1,267 @@
+<!-- {% extends 'public_base.html' %} 
+{% load static %}
+
+{% block title %}Connexion - GestSport{% endblock %}
+
+{% block breadcrumb %}Connexion{% endblock %}
+
+{% block extra_css %}-->
+<style>
+/* Compact stat-card style exactly like the image */
+.login-page .stat-card {
+    transition: none !important;
+    padding: 0.5rem !important;
+    margin-top: 1rem !important;
+    max-width: 200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+.login-page .stat-card:hover {
+    transform: none !important;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(15, 9, 176, 0.15) !important;
+}
+.login-page .stat-header {
+    margin-bottom: 0.1rem !important;
+    align-items: center !important;
+}
+.login-page .stat-value {
+    font-size: 1rem !important;
+    margin-bottom: 0.05rem !important;
+    font-weight: 600 !important;
+}
+.login-page .stat-title {
+    font-size: 0.5rem !important;
+    margin-bottom: 0.1rem !important;
+}
+.login-page .stat-change {
+    font-size: 0.55rem !important;
+    margin-bottom: 0 !important;
+}
+.login-page .stat-icon {
+    font-size: 1.2rem !important;
+    display: none !important; /* Hide icon for compact look */
+}
+.login-page #activeUsersChart {
+    display: none !important; /* Hide canvas completely */
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center login-page">
+    <div class="col-lg-4 col-md-7">
+        <div class="progress-card">
+            <div class="text-center mb-4">
+                <a href="/" style="display: flex; justify-content: center; align-items: center; text-decoration: none;">
+                    <img src="{% static 'images/logo_GestSport.jpeg' %}" 
+                        alt="GestSport Logo" 
+                        style="height: 100px; width: auto; max-width: 250px; object-fit: contain;">
+                </a>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" id="loginForm">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">
+                        Email
+                    </label>
+                    <input type="email" name="username" class="form-control" id="id_username" 
+                           placeholder="Entrez votre email" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_password" class="form-label">
+                        Mot de passe
+                    </label>
+                    <div class="input-group">
+                        <input type="password" name="password" class="form-control" id="id_password" 
+                               placeholder="Entrez votre mot de passe" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn" style="background-color: #2ECC71; border-color: #2ECC71; color: white;">
+                        
+                        Se connecter
+                    </button>
+                </div>
+            </form>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                    
+                    <a href="{% url 'users:password_reset' %}" class="text-decoration-none" style="color: #2ECC71;">
+                        Mot de passe oublié ?
+                    </a>
+                </div>
+            
+            <hr class="my-4">
+            
+            <!--<div class="text-center">
+                <p class="small text-muted mb-3">Ou connectez-nous avec</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button class="btn btn-outline-primary">
+                        <i class="fab fa-facebook-f me-2"></i>Facebook
+                    </button>
+                    <button class="btn btn-outline-info">
+                        <i class="fab fa-twitter me-2"></i>Twitter
+                    </button>
+                    <button class="btn btn-outline-danger">
+                        <i class="fab fa-google me-2"></i>Google
+                    </button>
+                </div>
+            </div>
+        </div>-->
+        
+        <!-- Stats 
+        <div class="stat-card primary mt-3">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">UTILISATEURS ACTIFS</div>
+                    <div class="stat-value">1,234</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+12.5%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <canvas id="activeUsersChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    Features 
+    <div class="col-lg-7 col-md-5">
+        <div class="progress-card h-100">
+            <h6 class="mb-4">Pourquoi choisir GestSport ?</h6>
+            
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <div class="social-icon facebook me-3" style="width: 50px; height: 50px; font-size: 1.2rem; flex-shrink: 0;">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Réservation Rapide</h6>
+                            <p class="text-muted mb-0">Réservez votre terrain en quelques clics avec notre système de réservation instantanée</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <div class="social-icon twitter me-3" style="width: 50px; height: 50px; font-size: 1.2rem; flex-shrink: 0;">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Paiement Sécurisé</h6>
+                            <p class="text-muted mb-0">Transactions sécurisées avec plusieurs moyens de paiement disponibles</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <div class="social-icon linkedin me-3" style="width: 50px; height: 50px; font-size: 1.2rem; flex-shrink: 0;">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Application Mobile</h6>
+                            <p class="text-muted mb-0">Gérez vos réservations partout avec notre application mobile</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <div class="social-icon calendar me-3" style="width: 50px; height: 50px; font-size: 1.2rem; flex-shrink: 0;">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Support 24/7</h6>
+                            <p class="text-muted mb-0">Notre équipe est disponible pour vous aider à tout moment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="text-center">
+                <h6 class="mb-3">Rejoignez notre communauté</h6>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="h4 mb-1">15K+</div>
+                        <div class="small text-muted">Utilisateurs</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="h4 mb-1">50+</div>
+                        <div class="small text-muted">Terrains</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="h4 mb-1">4.8</div>
+                        <div class="small text-muted">Note moyenne</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+< Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Wait for Chart.js to load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('id_password');
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+        
+        // Active users chart - using global function from public_base.html
+        // Chart disabled to prevent animation loop
+        // createMiniChart('activeUsersChart', [1100, 1150, 1200, 1180, 1220, 1234, 1234], '#4e73df');
+        
+        // Form submission animation
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connexion en cours...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after 5 seconds in case of error
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %}

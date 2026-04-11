@@ -1,0 +1,464 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Réservation #{{ reservation.id }} - GestSport{% endblock %}
+
+{% block breadcrumb %}Détail Réservation {{ reservation.id }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-4" style="width: 60px; height: 60px; font-size: 1.5rem; background: rgba(255,255,255,0.2);">
+                            {{ reservation.id }}
+                        </div>
+                        <div>
+                            <h2 class="mb-2">Réservation {{ reservation.id }}</h2>
+                            <p class="mb-1 opacity-75">{{ reservation.terrain.name }}</p>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <span class="badge bg-light text-dark">
+                                    {{ reservation.terrain.get_terrain_type_display }}
+                                </span>
+                                <span class="badge bg-{% if reservation.status == 'pending' %}warning{% elif reservation.status == 'confirmed' %}success{% else %}danger{% endif %}">
+                                    {{ reservation.get_status_display }}
+                                </span>
+                                {% if reservation.is_paid %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Payée
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group">
+                        <a href="{% url 'reservations:reservation_list' %}" class="btn btn-info">
+                            </i>Retour
+                        </a>
+                        {% if reservation.status == 'pending' and user == reservation.user %}
+                        <button class="btn btn-warning" id="cancelReservationBtn">
+                            <i class="fas fa-times me-2"></i>Annuler
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Informations Réservation -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">
+                Informations de la Réservation
+            </h6>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Terrain</small>
+                        <strong>{{ reservation.terrain.name }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Type de terrain</small>
+                        <strong>{{ reservation.terrain.get_terrain_type_display }}</strong>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Date et heure de début</small>
+                        <strong>{{ reservation.start_time|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Date et heure de fin</small>
+                        <strong>{{ reservation.end_time|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Durée</small>
+                        <strong>{{ reservation.duration_minutes }} minutes</strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Statut</small>
+                        <span class="badge bg-{% if reservation.status == 'pending' %}warning{% elif reservation.status == 'confirmed' %}success{% else %}danger{% endif %}">
+                            {{ reservation.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                
+                {% if reservation.activity %}
+                <div class="col-12">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Activité liée</small>
+                        <strong>{{ reservation.activity.title }}</strong>
+                        <span class="badge bg-info ms-2">{{ reservation.activity.get_activity_type_display }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if reservation.notes %}
+                <div class="col-12">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Notes</small>
+                        <p>{{ reservation.notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">
+                <i class="fas fa-cogs me-2 text-warning"></i>Actions Disponibles
+            </h6>
+            
+            <div class="row">
+                <!-- Actions Coach (pour ses réservations) -->
+                {% if user.role == 'coach' %}
+                <!-- Debug info pour coach -->
+                <div class="col-12 mb-3">
+                    <div class="alert alert-info">
+                        <small>
+                            <strong>Debug Coach:</strong><br>
+                            User: {{ user.username }} ({{ user.role }})<br>
+                            Reservation User: {{ reservation.user.username }}<br>
+                            Is Owner: {% if reservation.user == user %}Yes{% else %}No{% endif %}<br>
+                            Status: {{ reservation.status }}<br>
+                            Is Paid: {{ reservation.is_paid }}<br>
+                            Has Ticket: {{ reservation.ticket|yesno:"Yes,No" }}
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Bouton de Paiement (coach peut payer même si pending) -->
+                {% if reservation.user == user and reservation.status == 'pending' and not reservation.is_paid and not reservation.is_payment_pending_validation %}
+                <div class="col-md-6 mb-3">
+                    <a href="{% url 'payments:stripe_checkout' reservation.id %}" class="btn btn-success w-100">
+                        Procéder au Paiement
+                    </a>
+                </div>
+                {% else %}
+                <div class="col-md-6 mb-3">
+                    <button class="btn btn-outline-secondary w-100" disabled>
+                        Paiement 
+                    </button>
+                </div>
+                {% endif %}
+                
+                <!-- Bouton Générer le Ticket (pour ses réservations payées) -->
+                {% if reservation.user == user and reservation.status == 'confirmed' and reservation.is_paid and not reservation.ticket %}
+                <div class="col-md-6 mb-3">
+                    <button class="btn btn-info w-100" id="generateTicketBtn" onclick="generateTicket()">
+                        Générer le Ticket
+                    </button>
+                </div>
+                {% else %}
+                <div class="col-md-6 mb-3">
+                    <button class="btn btn-outline-secondary w-100" disabled>
+                        Générer Ticket 
+                    </button>
+                </div>
+                {% endif %}
+                
+                <!-- Bouton Télécharger le Ticket (ses tickets générés pour sa réservation) -->
+                {% if reservation.user == user and reservation.ticket %}
+                <div class="col-md-6 mb-3">
+                    <a href="{% url 'tickets:download' reservation.id %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-download me-2"></i>Télécharger le Ticket
+                    </a>
+                </div>
+                {% else %}
+                <div class="col-md-6 mb-3">
+                    <button class="btn btn-outline-secondary w-100" disabled>
+                        <i class="fas fa-download me-2"></i>Télécharger Ticket (Pas de ticket)
+                    </button>
+                </div>
+                {% endif %}
+                {% endif %}
+                
+                <!-- Actions Admin (gestion réservations et activités) -->
+                {% if user.role == 'admin' %}
+                <!-- Bouton Confirmer la réservation (admin ne peut confirmer que si payée) -->
+                <div class="col-md-6 mb-3">
+                    {% if reservation.status == 'pending' and reservation.is_paid %}
+                    <button class="btn btn-success w-100" id="confirmReservationBtn">
+                        <i class="fas fa-check me-2"></i>Confirmer la Réservation
+                    </button>
+                    {% elif reservation.status == 'pending' and not reservation.is_paid %}
+                    <button class="btn btn-outline-warning w-100" disabled>
+                        <i class="fas fa-exclamation-triangle me-2"></i>En attente de paiement
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <!-- Bouton Rejeter la réservation -->
+                <div class="col-md-6 mb-3">
+                    {% if reservation.status == 'pending' %}
+                    <button class="btn btn-danger w-100" id="rejectReservationBtn">
+                        <i class="fas fa-times me-2"></i>Rejeter la Réservation
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <!-- Bouton Scanner les tickets à l'arrivée -->
+                <div class="col-md-6 mb-3">
+                    <a href="{% url 'tickets:scan' %}" class="btn btn-info w-100">
+                        <i class="fas fa-qrcode me-2"></i>Scanner un Ticket
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Informations Financières -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">
+                Informations Financières
+            </h6>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Montant total</small>
+                <h5 class="text-success">{{ reservation.total_amount }}F CFA</h5>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Statut de paiement</small>
+                <span class="badge bg-{% if reservation.is_paid %}success{% elif reservation.is_payment_pending_validation %}warning{% else %}secondary{% endif %}">
+                    {{ reservation.payment_status_display }}
+                </span>
+            </div>
+            
+            {% if reservation.payment_method %}
+            <div class="mb-3">
+                <small class="text-muted d-block">Méthode de paiement</small>
+                <strong>{{ reservation.get_payment_method_display }}</strong>
+            </div>
+            {% endif %}
+            
+            {% if reservation.payment_date %}
+            <div class="mb-3">
+                <small class="text-muted d-block">Date de paiement</small>
+                <strong>{{ reservation.payment_date|date:"d/m/Y H:i" }}</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Informations Ticket -->
+        {% if reservation.ticket %}
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">
+                Informations sur le Ticket
+            </h6>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Numéro de ticket</small>
+                <h5 class="text-primary">{{ reservation.ticket.ticket_number }}</h5>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Date de génération</small>
+                <strong>{{ reservation.ticket.generated_at|date:"d/m/Y H:i" }}</strong>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Statut</small>
+                <span class="badge bg-{% if reservation.ticket.is_used %}danger{% else %}success{% endif %}">
+                    {% if reservation.ticket.is_used %}Utilisé{% else %}Valide{% endif %}
+                </span>
+            </div>
+            
+            {% if reservation.ticket.used_at %}
+            <div class="mb-3">
+                <small class="text-muted d-block">Utilisé le</small>
+                <strong>{{ reservation.ticket.used_at|date:"d/m/Y H:i" }}</strong>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Historique -->
+        <div class="progress-card">
+            <h6 class="mb-3">
+                <i class="fas fa-history me-2 text-info"></i>Historique
+            </h6>
+            
+            <div class="timeline">
+                {% if reservation.created_at %}
+                <div class="timeline-item">
+                    <small class="text-muted">{{ reservation.created_at|date:"d/m/Y H:i" }}</small>
+                    <p class="mb-1">Réservation créée</p>
+                </div>
+                {% endif %}
+                
+                {% if reservation.confirmation_date %}
+                <div class="timeline-item">
+                    <small class="text-muted">{{ reservation.confirmation_date|date:"d/m/Y H:i" }}</small>
+                    <p class="mb-1">Réservation confirmée par {{ reservation.confirmed_by.get_full_name }}</p>
+                </div>
+                {% endif %}
+                
+                {% if reservation.payment_date %}
+                <div class="timeline-item">
+                    <small class="text-muted">{{ reservation.payment_date|date:"d/m/Y H:i" }}</small>
+                    <p class="mb-1">Paiement effectué</p>
+                </div>
+                {% endif %}
+                
+                {% if reservation.ticket and reservation.ticket.generated_at %}
+                <div class="timeline-item">
+                    <small class="text-muted">{{ reservation.ticket.generated_at|date:"d/m/Y H:i" }}</small>
+                    <p class="mb-1">Ticket généré</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Bouton de génération de ticket
+    document.getElementById('generateTicketBtn')?.addEventListener('click', function() {
+        if (confirm('Voulez-vous générer le ticket pour cette réservation ?\n\nCette action est unique et ne peut être annulée.')) {
+            window.location.href = `{% url 'tickets:generate' reservation.id %}`;
+        }
+    });
+    
+    // Fonction de génération de ticket (fallback)
+    window.generateTicket = function() {
+        if (confirm('Voulez-vous générer le ticket pour cette réservation ?\n\nCette action est unique et ne peut être annulée.')) {
+            window.location.href = `{% url 'tickets:generate' reservation.id %}`;
+        }
+    };
+    
+    // Bouton de confirmation admin
+    document.getElementById('confirmReservationBtn')?.addEventListener('click', function() {
+        if (confirm('Voulez-vous confirmer cette réservation ?')) {
+            fetch(`/reservations/{{ reservation.id }}/confirm/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            });
+        }
+    });
+    
+    // Bouton de rejet admin
+    document.getElementById('rejectReservationBtn')?.addEventListener('click', function() {
+        if (confirm('Voulez-vous rejeter cette réservation ?')) {
+            fetch(`/reservations/{{ reservation.id }}/reject/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            });
+        }
+    });
+    
+    // Bouton d'annulation
+    document.getElementById('cancelReservationBtn')?.addEventListener('click', function() {
+        if (confirm('Voulez-vous annuler cette réservation ?')) {
+            fetch(`/reservations/{{ reservation.id }}/cancel/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            });
+        }
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #007bff;
+}
+</style>
+{% endblock %}

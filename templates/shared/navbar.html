@@ -1,0 +1,105 @@
+{% load static %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+    <div class="container-fluid">
+        <!-- Logo -->
+        <a class="navbar-brand fw-bold fs-5" href="{% url 'home' %}">
+            <i class="fas fa-futbol me-2"></i>GestSport
+        </a>
+        
+        <!-- Toggle mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <!-- Menu -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <!-- Utilisateur non authentifié -->
+                {% if not user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}"></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Connexion
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'contact' %}">
+                            <i class="fas fa-envelope me-1"></i>Contactez un admin
+                        </a>
+                    </li>
+                {% else %}
+                    <!-- Utilisateur authentifié -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}"></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'terrains:terrain_list' %}">
+                            <i class="fas fa-futbol me-1"></i>Terrains
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'activities:activity_list' %}">
+                            <i class="fas fa-running me-1"></i>Activités
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'reservations:reservation_list' %}">
+                            <i class="fas fa-calendar me-1"></i>Réservations
+                        </a>
+                    </li>
+                    
+                    <!-- Notification Badge -->
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{% url 'notifications:notification_list' %}">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Menu déroulant utilisateur -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-2"></i>{{ user.get_full_name|default:user.email }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="fas fa-user me-2"></i>Mon Profil</a></li>
+                            <li><a class="dropdown-item" href="{% url 'users:profile_edit' %}"><i class="fas fa-edit me-2"></i>Modifier Profil</a></li>
+                            <li><a class="dropdown-item" href="{% url 'users:settings' %}"><i class="fas fa-cog me-2"></i>Paramètres</a></li>
+                            {% if user.role == 'admin' %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'dashboard_admin' %}"><i class="fas fa-chart-line me-2"></i>Admin</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<script>
+// Mettre à jour le compteur de notifications
+function updateNotificationCount() {
+    fetch('/notifications/count/')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('notification-count');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.className = data.count > 0 ? 
+                    'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger' : 
+                    'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary';
+            }
+        });
+}
+
+// Mettre à jour au chargement de la page
+document.addEventListener('DOMContentLoaded', updateNotificationCount);
+
+// Mettre à jour toutes les 30 secondes
+setInterval(updateNotificationCount, 30000);
+</script>

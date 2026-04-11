@@ -1,0 +1,483 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}Dashboard Réservations - Admin{% endblock %}
+
+{% block breadcrumb %}Dashboard / Réservations{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg,  #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">                       
+                        Réservations
+                    </h2>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'reservations:admin_reservation_list' %}" class="btn btn-info">
+                      Voir les reservations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>    
+    <!-- Statistiques principales -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ total_reservations }} TOTAL</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ confirmed_percentage|floatformat:1 }}%</p>
+                <canvas id="miniTotalReservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ confirmed_reservations }} CONFIRMÉES</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ confirmed_percentage|floatformat:1 }}%</p>
+                <canvas id="miniConfirmedReservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ expired_reservations }} EXPIRÉES</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ expired_percentage|floatformat:1 }}%</p>
+                <canvas id="miniExpiredReservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ completed_today }} TERMINÉES AUJ.</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ completed_today_percentage|floatformat:1 }}%</p>
+                <canvas id="miniCompletedTodayChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+    
+    <!-- Alertes et actions -->
+    {% if expired_reservations > 0 %}
+    <div class="card border-danger mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Réservations Expirées Non Traitées
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <p class="mb-0">
+                        Il y a <strong class="text-danger">{{ expired_reservations }}</strong> réservation(s) expirée(s) .
+                    </p>
+                </div>
+                <div class="btn-group" role="group">
+                    <button onclick="markAllAsCompleted()" class="btn btn-success btn-sm">
+                         Tout marquer comme terminées
+                    </button>
+                    <button onclick="runExpiredCheck()" class="btn btn-primary btn-sm">
+                         Vérifier maintenant
+                    </button>
+                    <a href="/reservations/admin/list/?status=expired" class="btn btn-warning btn-sm">
+                         Voir toutes les expirées
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Réservations expirées récentes -->
+    {% if recent_expired %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-clock me-2"></i>
+                Réservations Expirées Récentes
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Terrain</th>
+                            <th>Date/Heure</th>
+                            <th>Ticket</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in recent_expired %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                        {{ reservation.user.email|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ reservation.user.get_full_name|default:reservation.user.email }}</div>
+                                        <small class="text-muted">{{ reservation.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="fw-semibold">{{ reservation.terrain.name }}</div>
+                                    <small class="text-muted">{{ reservation.terrain.terrain_type }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <div>{{ reservation.start_time|date:"d/m H:i" }} - {{ reservation.end_time|date:"H:i" }}</div>
+                                    <small class="text-danger">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Expirée
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if reservation.ticket %}
+                                    <div>
+                                        <div class="fw-semibold">{{ reservation.ticket.ticket_number }}</div>
+                                        <small class="text-muted">
+                                            {% if reservation.ticket.is_used %}
+                                                <i class="fas fa-check-circle text-success me-1"></i>Utilisé
+                                            {% else %}
+                                                <i class="fas fa-times-circle text-danger me-1"></i>Non utilisé
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="/admin/reservations/reservation/{{ reservation.pk }}/change/" class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'reservations:admin_reservation_detail' reservation.pk %}" class="btn btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Statistiques détaillées -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Réservations par Terrain
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="terrainChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts pour les actions et graphiques -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Fonctions utilitaires CoreUI
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Fonction pour afficher les notifications CoreUI
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    if (container) {
+        container.insertBefore(notification, container.firstChild);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+}
+
+// Actions principales
+function markAllAsCompleted() {
+    if (confirm('Êtes-vous sûr de vouloir marquer toutes les réservations expirées comme terminées ?')) {
+        fetch('/admin/reservations/mark-expired-completed/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Succès ! ' + data.updated + ' réservations marquées comme terminées.', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('Erreur: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showNotification('Erreur de connexion: ' + error, 'danger');
+        });
+    }
+}
+
+function runExpiredCheck() {
+    if (confirm('Voulez-vous exécuter la vérification des réservations expirées maintenant ?')) {
+        fetch('/reservations/admin/run-expired-check/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Vérification terminée ! ' + data.updated + ' réservations mises à jour.', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('Erreur: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showNotification('Erreur de connexion: ' + error, 'danger');
+        });
+    }
+}
+
+// Configuration des graphiques CoreUI
+document.addEventListener('DOMContentLoaded', function() {
+    // Options par défaut pour tous les graphiques
+    const defaultOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    font: {
+                        family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto',
+                        size: 12
+                    }
+                }
+            }
+        }
+    };
+    
+    // Graphique par terrain (bar)
+    const terrainCtx = document.getElementById('terrainChart');
+    if (terrainCtx) {
+        new Chart(terrainCtx, {
+            type: 'bar',
+            data: {
+                labels: [{% for item in reservations_by_terrain %}'{{ item.terrain__name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Nombre de réservations',
+                    data: [{% for item in reservations_by_terrain %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...defaultOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            borderDash: [2, 2],
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Graphique par statut (doughnut)
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx) {
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [{% for item in reservations_by_status %}'{{ item.status|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for item in reservations_by_status %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',   // primary
+                        'rgba(40, 167, 69, 0.8)',    // success
+                        'rgba(255, 193, 7, 0.8)',    // warning
+                        'rgba(220, 53, 69, 0.8)',    // danger
+                        'rgba(108, 117, 125, 0.8)'   // secondary
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...defaultOptions,
+                cutout: '60%',
+                plugins: {
+                    ...defaultOptions.plugins,
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Participants - {{ activity.title }} - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{% url 'activities:activity_list' %}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="fas fa-arrow-left me-1"></i>Retour
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <h2 class="fw-bold mb-4">
+                <i class="fas fa-people-group me-2"></i>Gestion des Participants - {{ activity.title }}
+            </h2>
+        </div>
+    </div>
+    
+    <!-- Statistiques -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-check fa-2x text-success mb-2 d-block"></i>
+                    <h4>{{ activity.participants.count }}</h4>
+                    <p class="text-muted mb-0">Inscrits</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-clock fa-2x text-warning mb-2 d-block"></i>
+                    <h4>{{ remaining }}</h4>
+                    <p class="text-muted mb-0">Places disponibles</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-friends fa-2x text-info mb-2 d-block"></i>
+                    <h4>{{ activity.max_participants }}</h4>
+                    <p class="text-muted mb-0">Capacité max</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-percent fa-2x text-primary mb-2 d-block"></i>
+                    <h4>{{ percentage }}%</h4>
+                    <p class="text-muted mb-0">Remplissage</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Barre de progression -->
+    <div class="card shadow mb-5">
+        <div class="card-body">
+            <div class="progress" role="progressbar" style="height: 30px;">
+                <div class="progress-bar bg-success" style="width: {{ percentage }}%">
+                    {{ percentage }}%
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Liste participants -->
+    <div class="card shadow">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Liste des Participants</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Rôle</th>
+                        <th>Date d'inscription</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participant in activity.participants.all %}
+                    <tr>
+                        <td>{{ participant.get_full_name }}</td>
+                        <td>{{ participant.email }}</td>
+                        <td><span class="badge bg-info">{{ participant.get_role_display }}</span></td>
+                        <td>{{ participant.date_joined|date:"d/m/Y" }}</td>
+                        <td class="text-center">
+                            {% if user == activity.coach and user != participant %}
+                            <a href="#" class="btn btn-sm btn-danger" onclick="return confirm('Retirer ce participant ?')">
+                                <i class="fas fa-user-minus"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Aucun participant</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

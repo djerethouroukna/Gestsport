@@ -1,0 +1,280 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+.audit-detail {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 6px;
+    margin: 20px 0;
+}
+
+.detail-section {
+    margin-bottom: 20px;
+}
+
+.detail-section h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    border-bottom: 2px solid #007cba;
+    padding-bottom: 5px;
+    font-size: 14px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.detail-value {
+    font-weight: bold;
+    color: #333;
+}
+
+.changes-display {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.change-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.change-item:last-child {
+    border-bottom: none;
+}
+
+.change-field {
+    font-weight: bold;
+    min-width: 120px;
+    color: #333;
+}
+
+.change-values {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.old-value {
+    color: #dc3545;
+    text-decoration: line-through;
+    background: #f8d7da;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.new-value {
+    color: #28a745;
+    background: #d4edda;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.arrow {
+    color: #666;
+    font-weight: bold;
+}
+
+.metadata-display {
+    background: #f1f3f4;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    font-family: monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.action-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.badge-create { background: #28a745; color: white; }
+.badge-update { background: #17a2b8; color: white; }
+.badge-delete { background: #dc3545; color: white; }
+.badge-login { background: #007bff; color: white; }
+.badge-logout { background: #6c757d; color: white; }
+.badge-failed { background: #dc3545; color: white; }
+.badge-view { background: #e9ecef; color: #333; }
+.badge-export { background: #ffc107; color: #333; }
+
+.security-alert {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.security-alert.danger {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <!-- Détails du log -->
+    <div class="audit-detail">
+        <div class="detail-section">
+            <h4>🔍 Informations Générales</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Action</div>
+                    <div class="detail-value">
+                        <span class="action-badge badge-{{ original.action|lower }}">
+                            {{ original.get_action_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Date/Heure</div>
+                    <div class="detail-value">{{ original.timestamp|date:"d/m/Y H:i:s" }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Utilisateur</div>
+                    <div class="detail-value">
+                        {% if original.user %}
+                            {{ original.user.get_full_name|default:original.user.email }}
+                        {% else %}
+                            Système
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Adresse IP</div>
+                    <div class="detail-value">
+                        {% if original.ip_address %}
+                            <code>{{ original.ip_address }}</code>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h4>📦 Détails de l'Objet</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Modèle</div>
+                    <div class="detail-value">{{ original.model_name }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">ID de l'objet</div>
+                    <div class="detail-value">
+                        {% if original.object_id %}
+                            #{{ original.object_id }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Représentation</div>
+                    <div class="detail-value">{{ original.object_repr|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertes de sécurité -->
+        {% if original.action == 'FAILED_LOGIN' %}
+        <div class="security-alert danger">
+            <strong>🚨 Alerte de sécurité:</strong> Tentative de connexion échouée détectée
+            {% if original.metadata.username_attempted %}
+                | Utilisateur: {{ original.metadata.username_attempted }}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if original.action == 'DELETE' %}
+        <div class="security-alert">
+            <strong>⚠️ Action importante:</strong> Suppression d'un objet détectée
+        </div>
+        {% endif %}
+
+        <!-- Changements -->
+        {% if original.changes %}
+        <div class="detail-section">
+            <h4>📝 Changements Détectés</h4>
+            <div class="changes-display">
+                {% if original.changes.deleted %}
+                    <div style="text-align: center; color: #dc3545; font-weight: bold;">
+                        🗑️ Objet supprimé
+                    </div>
+                {% else %}
+                    {% for field, change in original.changes.items %}
+                    <div class="change-item">
+                        <div class="change-field">{{ field }}:</div>
+                        <div class="change-values">
+                            <span class="old-value">{{ change.old|default:"vide" }}</span>
+                            <span class="arrow">→</span>
+                            <span class="new-value">{{ change.new|default:"vide" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- User Agent -->
+        {% if original.user_agent %}
+        <div class="detail-section">
+            <h4>🌐 Navigateur/Client</h4>
+            <div style="background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 11px;">
+                {{ original.user_agent }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Métadonnées -->
+        {% if original.metadata %}
+        <div class="detail-section">
+            <h4>📊 Métadonnées</h4>
+            <div class="metadata-display">{{ original.metadata|pprint }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Formulaire standard (lecture seule) -->
+    {{ block.super }}
+</div>
+{% endblock %}

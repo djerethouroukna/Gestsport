@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestion Terrains - GestSport{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2 class="fw-bold mb-0">
+                <i class="fas fa-futbol me-2"></i>Gestion des Terrains
+            </h2>
+            <a href="{% url 'terrains:terrain_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Ajouter un Terrain
+            </a>
+        </div>
+    </div>
+    
+    <!-- Tableau -->
+    <div class="card shadow">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nom</th>
+                        <th>Type</th>
+                        <th>Capacité</th>
+                        <th>Prix/h</th>
+                        <th>Statut</th>
+                        <th>Note</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for terrain in terrains %}
+                    <tr>
+                        <td><strong>{{ terrain.name }}</strong></td>
+                        <td>{{ terrain.get_terrain_type_display }}</td>
+                        <td>{{ terrain.capacity }} personnes</td>
+                        <td>{{ terrain.price_per_hour }}FCFA</td>
+                        <td>
+                            <span class="badge bg-{% if terrain.status == 'available' %}success{% elif terrain.status == 'maintenance' %}warning{% else %}danger{% endif %}">
+                                {{ terrain.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <i class="fas fa-star text-warning"></i>
+                            {{ terrain.average_rating }}/5
+                        </td>
+                        <td class="text-center">
+                            <a href="#" class="btn btn-sm btn-info" title="Voir">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="#" class="btn btn-sm btn-warning" title="Éditer">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="#" class="btn btn-sm btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr ?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Aucun terrain. <a href="{% url 'terrains:terrain_create' %}">Ajouter un maintenant</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

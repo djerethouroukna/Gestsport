@@ -1,0 +1,416 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}Activités Sportives - GestSport{% endblock %}
+
+{% block breadcrumb %}Activités{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        Activités Sportives
+                    </h2>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'activities:activity_create' %}" class="btn btn-info">
+                        Nouvelle Activité
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ total_activities }} TOUTES</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ total_activities }} Activités</p>
+                <canvas id="miniAllActivitiesChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ confirmed_activities }} CONFIRMÉES</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ confirmed_percentage|floatformat:1 }}% confirmées</p>
+                <canvas id="miniConfirmedActivitiesChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ pending_activities }} EN ATTENTE</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ pending_percentage|floatformat:1 }}% en attente</p>
+                <canvas id="miniPendingActivitiesChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ today_activities }} AUJOURD'HUI</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ today_percentage|floatformat:1 }}% aujourd'hui</p>
+                <canvas id="miniTodayActivitiesChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Type d'activité</label>
+                        <select class="form-select" id="filterType">
+                            <option value="">Tous les types</option>
+                            <option value="training">Entraînement</option>
+                            <option value="match">Match</option>
+                            <option value="tournament">Tournoi</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Statut</label>
+                        <select class="form-select" id="filterStatus">
+                            <option value="">Tous les statuts</option>
+                            <option value="pending">En attente</option>
+                            <option value="confirmed">Confirmé</option>
+                            <option value="cancelled">Annulé</option>
+                            <option value="completed">Terminé</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Terrain</label>
+                        <select class="form-select" id="filterTerrain">
+                            <option value="">Tous les terrains</option>
+                            {% for terrain in terrains %}
+                            <option value="{{ terrain.id }}">{{ terrain.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Recherche</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Rechercher...">
+                            <button class="btn btn-outline-info" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activities List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    Liste des Activités
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if activities %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                        
+                                        Activité
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                       
+                                        Terrain
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                        
+                                        Date/Heure
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                        
+                                        Coach
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                       
+                                        Participants
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="d-flex align-items-center">
+                                        
+                                        Statut
+                                    </div>
+                                </th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold">{{ activity.title }}</div>
+                                            <small class="text-muted">{{ activity.get_activity_type_display }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ activity.terrain.name }}</div>
+                                    <small class="text-muted">{{ activity.terrain.get_terrain_type_display }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ activity.start_time|date:'d/m/Y' }}</div>
+                                    <small class="text-muted">{{ activity.start_time|time:'H:i' }} - {{ activity.end_time|time:'H:i' }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ activity.coach.get_full_name|default:activity.coach.email }}</div>
+                                    <small class="text-muted">{{ activity.coach.role|capfirst }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ activity.max_participants }}
+                                    </span>
+                                    <div class="progress mt-1" style="height: 4px;">
+                                        <div class="progress-bar" style="width: {% widthratio activity.participants.count activity.max_participants 100 %}%"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if activity.status == 'confirmed' %}
+                                    <span class="badge bg-success">{{ activity.get_status_display }}</span>
+                                {% elif activity.status == 'pending' %}
+                                    <span class="badge bg-warning">{{ activity.get_status_display }}</span>
+                                {% elif activity.status == 'cancelled' %}
+                                    <span class="badge bg-danger">{{ activity.get_status_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ activity.get_status_display }}</span>
+                                {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'activities:activity_detail' activity.id %}" class="btn btn-sm btn-outline-info" title="Voir">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if user.role == 'admin' or user.role == 'coach' and activity.coach == user %}
+                                        <a href="{% url 'activities:activity_update' activity.id %}" class="btn btn-sm btn-outline-secondary" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'activities:activity_delete' activity.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav aria-label="Pagination des activités" class="p-3">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-running fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucune activité trouvée</h5>
+                    <p class="text-muted">Commencez par créer une nouvelle activité sportive.</p>
+                    <a href="{% url 'activities:activity_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Créer une activité
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtrage dynamique
+document.addEventListener('DOMContentLoaded', function() {
+    const filterType = document.getElementById('filterType');
+    const filterStatus = document.getElementById('filterStatus');
+    const filterTerrain = document.getElementById('filterTerrain');
+    const searchInput = document.getElementById('searchInput');
+    const tableRows = document.querySelectorAll('tbody tr');
+    
+    function filterTable() {
+        const typeValue = filterType.value.toLowerCase();
+        const statusValue = filterStatus.value.toLowerCase();
+        const terrainValue = filterTerrain.value;
+        const searchValue = searchInput.value.toLowerCase();
+        
+        tableRows.forEach(row => {
+            const title = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+            const terrain = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const status = row.querySelector('td:nth-child(5) .badge').textContent.toLowerCase();
+            const terrainId = row.querySelector('td:nth-child(2)').dataset.terrainId || '';
+            
+            const matchesType = !typeValue || title.includes(typeValue);
+            const matchesStatus = !statusValue || status.includes(statusValue);
+            const matchesTerrain = !terrainValue || terrainId === terrainValue;
+            const matchesSearch = !searchValue || title.includes(searchValue) || terrain.includes(searchValue);
+            
+            row.style.display = matchesType && matchesStatus && matchesTerrain && matchesSearch ? '' : 'none';
+        });
+    }
+    
+    filterType.addEventListener('change', filterTable);
+    filterStatus.addEventListener('change', filterTable);
+    filterTerrain.addEventListener('change', filterTable);
+    searchInput.addEventListener('input', filterTable);
+});
+</script>
+{% endblock %}

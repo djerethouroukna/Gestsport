@@ -1,0 +1,1014 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ terrain.name }} - GestSport{% endblock %}
+
+{% block breadcrumb %}{{ terrain.name }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                       
+                        {{ terrain.name }}
+                    </h2>
+                    <p class="mb-0 opacity-75">{{ terrain.description|truncatewords:15 }}</p>
+                    
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'terrains:terrain_list' %}" class="btn btn-info">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Retour
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2>{{ terrain.average_rating|default:"4.5" }}/5</h2>
+                <p>NOTE MOY</p>
+            </div>
+            <div class="card-bottom">
+                <p>+0.2 performance</p>
+                <canvas id="ratingChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2>{{ reservation_count|default:45 }}</h2>
+                <p>RÉSERVATIONS</p>
+            </div>
+            <div class="card-bottom">
+                <p>+12.3% performance</p>
+                <canvas id="reservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2>{{ occupancy_rate|default:75 }}%</h2>
+                <p>OCCUPATION</p>
+            </div>
+            <div class="card-bottom">
+                <p>-5.1% performance</p>
+                <canvas id="occupancyChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2>{{ monthly_revenue|default:1250 }}F CFA</h2>
+                <p>R.MENSUEL</p>
+            </div>
+            <div class="card-bottom">
+                <p>+8.7% performance</p>
+                <canvas id="revenueChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Gallery -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-images me-2 text-primary"></i>
+                    Galerie Photos
+                </h6>
+                
+            </div>
+            
+            <div class="p-0">
+                {% if photos and photos.count > 1 %}
+                <div id="terrainCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for p in photos %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ p.image.url }}" class="d-block w-100" alt="{{ p.caption|default:terrain.name }}" style="height: 400px; object-fit: cover;">
+                            {% if p.caption %}
+                            <div class="carousel-caption d-none d-md-block">
+                                <h5>{{ p.caption }}</h5>
+                                <small>{{ p.description|default:"" }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#terrainCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Précédent</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#terrainCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Suivant</span>
+                    </button>
+                </div>
+                {% else %}
+                    {% if primary_photo %}
+                        {% if primary_photo.image %}
+                        <img src="{{ primary_photo.image.url }}" class="img-fluid w-100" alt="{{ terrain.name }}" style="height: 400px; object-fit: cover;">
+                        {% else %}
+                        <img src="{{ primary_photo.url }}" class="img-fluid w-100" alt="{{ terrain.name }}" style="height: 400px; object-fit: cover;">
+                        {% endif %}
+                    {% else %}
+                    <img src="https://via.placeholder.com/1200x400?text={{ terrain.name }}" class="img-fluid w-100" alt="{{ terrain.name }}" style="height: 400px; object-fit: cover;">
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    
+                    Description
+                </h6>
+                
+            </div>
+            
+            <div class="p-3">
+                <h4 class="mb-3">{{ terrain.name }}</h4>
+                <p class="text-muted">{{ terrain.description }}</p>
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-info">
+                            Type
+                        </label>
+                        <div class="form-control-plaintext">
+                            <span class="badge bg-info">{{ terrain.get_terrain_type_display }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-success">
+                          Capacité
+                        </label>
+                        <div class="form-control-plaintext">
+                            <span class="badge bg-success">{{ terrain.capacity }} personnes</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-warning">
+                            Prix/h
+                        </label>
+                        <div class="form-control-plaintext">
+                            <span class="badge bg-warning">{{ terrain.price_per_hour }}F CFA</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if terrain.address or terrain.city or terrain.postal_code %}
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold text-info">
+                            <i class="fas fa-map-marker-alt me-2"></i>Localisation
+                        </label>
+                        <div class="form-control-plaintext">
+                            {% if terrain.address %}{{ terrain.address }}{% endif %}
+                            {% if terrain.city %}{{ terrain.city }}{% endif %}
+                            {% if terrain.postal_code %}{{ terrain.postal_code }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Equipment & Reviews 
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="progress-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="mb-0">
+                            <i class="fas fa-wrench me-2 text-primary"></i>
+                            Équipements
+                        </h6>
+                        <span class="badge bg-primary">{{ equipments|length }}</span>
+                    </div>
+                    <div class="p-3">
+                        <div class="row g-2">
+                            {% for eq in equipments %}
+                            <div class="col-6">
+                                <div class="social-icon primary me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <span class="small">{{ eq.name }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="progress-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="mb-0">
+                            <i class="fas fa-star me-2 text-warning"></i>
+                            Avis Clients
+                        </h6>
+                        <span class="badge bg-warning">{{ approved_reviews|length }}</span>
+                    </div>
+                    <div class="p-3">
+                        {% if approved_reviews %}
+                        <div class="list-group list-group-flush">
+                            {% for r in approved_reviews %}
+                            <div class="list-group-item border-0 px-0">
+                                <div class="d-flex align-items-start">
+                                    <div class="user-avatar me-3" style="width: 35px; height: 35px; font-size: 0.8rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        {{ r.user.get_full_name.0|default:r.user.email.0|upper }}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">{{ r.user.get_full_name|default:r.user.email }}</div>
+                                        <div class="small text-muted">{{ r.created_at|date:"d/m/Y H:i" }}</div>
+                                        <div class="small mb-2">{{ r.comment|truncatewords:15 }}</div>
+                                        <div class="d-flex align-items-center">
+                                            {% for i in "12345"|make_list %}
+                                                <i class="fas fa-star text-warning me-1"></i>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-3">
+                            <div class="social-icon warning mb-3" style="width: 50px; height: 50px; font-size: 1.2rem; margin: 0 auto;">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <p class="text-muted">Aucun avis pour le moment.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>-->
+        
+        <!-- Availability Calendar 
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2 text-info"></i>
+                    Disponibilités
+                </h6>
+                <button class="btn btn-sm btn-outline-primary" id="refreshCalendarBtn">
+                    <i class="fas fa-sync me-1"></i>
+                    Actualiser
+                </button>
+            </div>
+            <div class="p-3">
+                <div id="availabilityCalendar" style="height: 300px;"></div>
+            </div>
+        </div>-->
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Quick Reservation 
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-calendar-check me-2 text-success"></i>
+                    Réservation Rapide
+                </h6>
+                <span class="badge bg-success">{% if terrain.status == 'available' %}Disponible{% else %}{{ terrain.status|title }}{% endif %}</span>
+            </div>
+            
+            <form method="get" action="{% url 'reservations:reservation_create' %}">
+                <input type="hidden" name="terrain" value="{{ terrain.id }}">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        <i class="fas fa-calendar me-2 text-primary"></i>
+                        Date
+                    </label>
+                    <input type="date" name="date" class="form-control" required>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-clock me-2 text-info"></i>
+                            Début
+                        </label>
+                        <input type="time" name="start_time" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-clock me-2 text-warning"></i>
+                            Fin
+                        </label>
+                        <input type="time" name="end_time" class="form-control" required>
+                    </div>
+                </div>
+                
+                {% if user.is_authenticated %}
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-calendar-plus me-2"></i>
+                    Réserver maintenant
+                </button>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary w-100">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Se connecter pour réserver
+                </a>
+                {% endif %}
+            </form>
+        </div>-->
+        
+        <!-- Admin Actions -->
+        {% if user.role == 'admin' %}
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">
+                Actions Admin
+            </h6>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'terrains:terrain_update' terrain.id %}" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>
+                    Modifier
+                </a>
+                <a href="{% url 'terrains:terrain_availability' terrain.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Disponibilité
+                </a>
+                <button type="button" class="btn btn-danger btn-sm btn-delete-terrain" 
+                        data-id="{{ terrain.id }}" data-name="{{ terrain.name|escapejs }}">
+                    <i class="fas fa-trash me-2"></i>
+                    Supprimer
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Map -->
+        {% if coords %}
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-map-marker-alt me-2 text-info"></i>
+                    Localisation
+                </h6>
+            </div>
+            
+            <div class="small text-muted mt-2">
+                <i class="fas fa-map-marker-alt me-1"></i>
+                Latitude: {{ coords.lat }} — Longitude: {{ coords.lng }}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Contact Info -->
+        <div class="progress-card">
+            <h6 class="mb-4">
+                <i class="fas fa-phone-alt me-2 text-success"></i>
+                Contact
+            </h6>
+            
+            <div class="list-group list-group-flush">
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon primary me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Email</div>
+                            <div class="small text-muted">contact@gestsport.com</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon success me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Téléphone</div>
+                            <div class="small text-muted">+235 63 20 55 12</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon warning me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Horaires</div>
+                            <div class="small text-muted">05:00 - 22:00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Modal -->
+<div class="modal fade" id="terrainMapModal" tabindex="-1" aria-labelledby="terrainMapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="terrainMapModalLabel">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    Localisation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="modalMap" style="height: 500px; width: 100%;"></div>
+            </div>
+            <div class="modal-footer small text-muted">
+                <span id="modalMapCoords"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+}
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+
+<script>
+// Mini Charts for Stats
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts
+createMiniChart('ratingChart', [4.3, 4.4, 4.5, 4.4, 4.6, 4.5, 4.5], '#f6c23e');
+createMiniChart('reservationsChart', [35, 38, 42, 40, 45, 43, 45], '#1cc88a');
+createMiniChart('occupancyChart', [80, 75, 78, 82, 77, 75, 75], '#36b9cc');
+createMiniChart('revenueChart', [1000, 1050, 1100, 1150, 1200, 1250, 1250], '#4e73df');
+
+// Share functionality
+document.getElementById('shareBtn')?.addEventListener('click', function() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ terrain.name }} - GestSport',
+            text: 'Découvrez ce terrain sportif exceptionnel sur GestSport !',
+            url: window.location.href
+        });
+    } else {
+        // Fallback for browsers that don't support Web Share API
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-info text-white">
+                    <i class="fas fa-share-alt me-2"></i>
+                    <strong class="me-auto">Partage</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    Lien copié dans le presse-papier !
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Copy URL to clipboard
+        navigator.clipboard.writeText(window.location.href);
+        
+        setTimeout(() => toast.remove(), 3000);
+    }
+});
+
+// Refresh calendar
+document.getElementById('refreshCalendarBtn')?.addEventListener('click', function() {
+    // Simulate calendar refresh
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-info text-white">
+                <i class="fas fa-sync me-2"></i>
+                <strong class="me-auto">Actualisation</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                Le calendrier de disponibilité a été actualisé
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+});
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    
+    const bgClass = type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info';
+    
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header ${bgClass} text-white">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Delete functionality - Use event delegation
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-delete-terrain');
+    if (!btn) return;
+    
+    e.preventDefault();
+    console.log('Delete button clicked for terrain:', btn.dataset.id);
+    
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Confirm modal
+    let confirmModal = document.getElementById('confirmDeleteModal');
+    if (!confirmModal) {
+        const modalHtml = `
+        <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                    Confirmer la suppression
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p id="confirmDeleteMessage"></p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Annuler
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i>Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    }
+    
+    const id = btn.dataset.id;
+    const name = btn.dataset.name || 'ce terrain';
+    document.getElementById('confirmDeleteMessage').textContent = `Confirmer la suppression de "${name}" ? Cette action est irréversible.`;
+
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    confirmBtn.onclick = async function(){
+        console.log('Confirm delete clicked for terrain:', id);
+        const url = '{% url "terrains:terrain_delete" 0 %}'.replace('0', id);
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            const data = await res.json();
+            console.log('Delete response:', data);
+            
+            if (data.success) {
+                showToast(data.message || 'Terrain supprimé avec succès', 'success');
+                window.location.href = '{% url "terrains:terrain_list" %}';
+            } else {
+                showToast(data.error || 'Erreur lors de la suppression', 'danger');
+            }
+        } catch (e) {
+            console.error('Delete error:', e);
+            showToast('Erreur réseau lors de la suppression', 'danger');
+        }
+    };
+
+    bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).show();
+});
+
+// Map functionality (if coords exist)
+{% if coords %}
+(function(){
+    var lat = {{ coords.lat }};
+    var lng = {{ coords.lng }};
+    var map = L.map('terrainMap').setView([lat, lng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    var marker = L.marker([lat, lng]).addTo(map).bindPopup('{{ terrain.name }}').openPopup();
+    
+    // Expose map and add center button behavior
+    window.terrainMap = map;
+    window.terrainMarker = marker;
+    var centerBtn = document.getElementById('centerMapBtn');
+    if(centerBtn){
+        centerBtn.addEventListener('click', function(){
+            if(window.terrainMap){
+                window.terrainMap.flyTo([lat, lng], 15);
+                if(window.terrainMarker) window.terrainMarker.openPopup();
+            } else {
+                alert('Carte non disponible pour le moment.');
+            }
+        });
+    }
+    
+    // Modal map functionality
+    var modalEl = document.getElementById('terrainMapModal');
+    var bsModal = new bootstrap.Modal(modalEl);
+    var modalMap, modalMarker;
+    
+    // Handle modal map
+    modalEl.addEventListener('shown.bs.modal', function () {
+        if(!modalMap){
+            modalMap = L.map('modalMap').setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(modalMap);
+            modalMarker = L.marker([lat, lng]).addTo(modalMap).bindPopup('{{ terrain.name }}').openPopup();
+        } else {
+            modalMap.setView([lat, lng], 15);
+            if(modalMarker){ 
+                modalMarker.setLatLng([lat, lng]).bindPopup('{{ terrain.name }}').openPopup(); 
+            } else { 
+                modalMarker = L.marker([lat, lng]).addTo(modalMap).bindPopup('{{ terrain.name }}').openPopup(); 
+            }
+        }
+        var c = document.getElementById('modalMapCoords');
+        if(c) c.textContent = 'Lat: ' + lat.toFixed(6) + ' — Lng: ' + lng.toFixed(6);
+    });
+})();
+})();
+{% endif %}
+
+// Calendar initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize availability calendar
+    const calendarEl = document.getElementById('availabilityCalendar');
+    const refreshBtn = document.getElementById('refreshCalendarBtn');
+    
+    if(calendarEl) {
+        loadAvailability();
+        
+        // Ajouter l'event listener pour le bouton d'actualisation
+        if(refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                const originalHTML = refreshBtn.innerHTML;
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Actualisation...';
+                refreshBtn.disabled = true;
+                
+                loadAvailability().finally(() => {
+                    refreshBtn.innerHTML = originalHTML;
+                    refreshBtn.disabled = false;
+                });
+            });
+        }
+    }
+    
+    function loadAvailability() {
+        return fetch(`/terrains/{{ terrain.id }}/availability/`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderAvailabilityCalendar(data.availability);
+            } else {
+                calendarEl.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="social-icon warning mb-3" style="width: 60px; height: 60px; font-size: 1.5rem; margin: 0 auto;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h5>Erreur de chargement</h5>
+                        <p class="text-muted">Impossible de charger les disponibilités</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading availability:', error);
+            calendarEl.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="social-icon danger mb-3" style="width: 60px; height: 60px; font-size: 1.5rem; margin: 0 auto;">
+                        <i class="fas fa-wifi"></i>
+                    </div>
+                    <h5>Erreur réseau</h5>
+                    <p class="text-muted">Vérifiez votre connexion</p>
+                </div>
+            `;
+        });
+    }
+    
+    function renderAvailabilityCalendar(availability) {
+        const today = new Date().toISOString().split('T')[0];
+        const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        
+        let calendarHTML = '<div class="mini-calendar">';
+        
+        // Afficher les 7 prochains jours
+        for (let i = 0; i < 7; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() + i);
+            const dateStr = date.toISOString().split('T')[0];
+            const dayName = days[date.getDay()];
+            const dayNum = date.getDate();
+            const availability = availability[dateStr];
+            
+            let statusClass = 'available';
+            let statusIcon = 'fa-check-circle';
+            let statusText = 'Disponible';
+            
+            if (availability) {
+                if (availability.status === 'full') {
+                    statusClass = 'full';
+                    statusIcon = 'fa-times-circle';
+                    statusText = 'Complet';
+                } else if (availability.status === 'partial') {
+                    statusClass = 'partial';
+                    statusIcon = 'fa-clock';
+                    statusText = 'Limité';
+                }
+            }
+            
+            const isToday = dateStr === today;
+            const todayClass = isToday ? 'today' : '';
+            
+            calendarHTML += `
+                <div class="mini-day ${statusClass} ${todayClass}">
+                    <div class="mini-day-name">${dayName}</div>
+                    <div class="mini-day-number">${dayNum}</div>
+                    <div class="mini-day-status">
+                        <i class="fas ${statusIcon}"></i>
+                        <span>${statusText}</span>
+                    </div>
+                    ${availability && availability.slots ? `
+                        <div class="mini-slots">
+                            ${availability.slots.slice(0, 2).join(', ')}
+                            ${availability.slots.length > 2 ? '...' : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        calendarHTML += '</div>';
+        calendarEl.innerHTML = calendarHTML;
+    }
+});
+</script>
+
+<style>
+.mini-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.mini-day {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 10px 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.mini-day:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #007bff;
+}
+
+.mini-day.today {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    border-width: 2px;
+}
+
+.mini-day.available {
+    border-left: 4px solid #28a745;
+}
+
+.mini-day.partial {
+    border-left: 4px solid #ffc107;
+}
+
+.mini-day.full {
+    border-left: 4px solid #dc3545;
+    opacity: 0.7;
+}
+
+.mini-day-name {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.mini-day-number {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.mini-day-status {
+    font-size: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.mini-day.available .mini-day-status {
+    color: #28a745;
+}
+
+.mini-day.partial .mini-day-status {
+    color: #ffc107;
+}
+
+.mini-day.full .mini-day-status {
+    color: #dc3545;
+}
+
+.mini-slots {
+    font-size: 0.6rem;
+    color: #6c757d;
+    margin-top: 3px;
+    line-height: 1.2;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends 'events/base_event_detail.html' %}
+{% load static %}
+
+{% block event_type %}Activité Sportive{% endblock %}
+
+{% block specific_fields %}
+<!-- Champs spécifiques aux activités -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="text-muted small">Type d'activité</label>
+            <div class="fw-semibold">{{ object.get_activity_type_display }}</div>
+        </div>
+        <div class="mb-3">
+            <label class="text-muted small">Entraîneur</label>
+            <div class="fw-semibold">{{ object.coach.get_full_name|default:object.coach.username }}</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="text-muted small">Places dispo</label>
+            <div class="fw-semibold">{{ object.available_spots }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block status_field %}
+{% if object.status == 'confirmed' %}
+<span class="badge bg-success">{{ object.get_status_display }}</span>
+{% elif object.status == 'pending' %}
+<span class="badge bg-warning">{{ object.get_status_display }}</span>
+{% elif object.status == 'cancelled' %}
+<span class="badge bg-danger">{{ object.get_status_display }}</span>
+{% else %}
+<span class="badge bg-secondary">{{ object.get_status_display }}</span>
+{% endif %}
+{% endblock %}
+
+{% block actions %}
+<a href="{% url 'activities:activity_list' %}" class="btn btn-outline-secondary btn-sm me-2">
+    
+    Retour
+</a>
+{% if user.role == 'admin' %}
+<a href="{% url 'activities:activity_update' object.id %}" class="btn btn-outline-secondary btn-sm me-2">
+    
+    Modifier
+</a>
+{% elif user.role == 'coach' and object.coach == user and object.status != 'confirmed' %}
+<a href="{% url 'activities:activity_update' object.id %}" class="btn btn-outline-secondary btn-sm me-2">
+    <i class="fas fa-edit me-2"></i>
+    Modifier
+</a>
+{% endif %}
+{% if object.status == 'pending' and user.role == 'admin' %}
+<button class="btn btn-success btn-sm me-2" onclick="confirmActivity()">
+    <i class="fas fa-check me-2"></i>
+    Confirmer
+</button>
+{% endif %}
+{% if user.role == 'admin' %}
+<button class="btn btn-outline-danger btn-sm" onclick="cancelActivity()">
+    <i class="fas fa-times me-2"></i>
+    Annuler
+</button>
+{% endif %}
+{% if object.status == 'confirmed' and user.role == 'coach' and object.coach == user %}
+<a href="{% url 'activities:activity_reservation_create' object.id %}" class="btn btn-primary btn-sm me-2">
+    <i class="fas fa-calendar-plus me-2"></i>
+    Réserver le terrain
+</a>
+{% endif %}
+{% endblock %}
+{% block extra_content %}
+{% if object.status == 'confirmed' %}
+<div class="alert alert-success mb-4">
+    <i class="fas fa-check-circle me-2"></i>
+    <strong>Activité confirmée</strong>
+    <br>
+    <small>Cette activité a été validée par l'administrateur et est maintenant visible par les joueurs. 
+    {% if user.role == 'coach' and object.coach == user %}
+    Vous pouvez réserver le terrain pour cette activité.
+    {% endif %}
+    </small>
+</div>
+{% endif %}
+
+{% if object.status == 'confirmed' and user.role == 'coach' and object.coach == user %}
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Action disponible :</strong> Vous pouvez réserver le terrain pour cette activité confirmée.
+    <br>
+    <small>Cliquez sur le bouton "Réserver le terrain" pour créer une réservation avec les mêmes dates et terrain.</small>
+</div>
+{% endif %}
+<!-- Participants
+<div class="card shadow mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="fas fa-users me-2"></i>
+            Participants
+            <span class="badge bg-info ms-2">{{ object.participants.count }}/{{ object.max_participants }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if object.participants.exists %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Date d'inscription</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participant in object.participants.all %}
+                    <tr>
+                        <td>{{ participant.get_full_name|default:participant.username }}</td>
+                        <td>{{ participant.email }}</td>
+                        <td>{{ participant.date_joined|date:'d/m/Y' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-users fa-2x text-muted mb-3"></i>
+            <p class="text-muted">Aucun participant inscrit pour le moment</p>
+        </div>
+        {% endif %}
+    </div>
+</div> -->
+
+<!-- Réservation associée -->
+{% if object.reservation %}
+<div class="card shadow mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-check me-2"></i>
+            Réservation du Terrain
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="text-muted small">Référence</label>
+                    <div class="fw-semibold">#{{ object.reservation.id }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Terrain</label>
+                    <div class="fw-semibold">{{ object.reservation.terrain.name }}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="text-muted small">Coût total</label>
+                    <div class="fw-semibold text-primary">{{ object.reservation.total_amount }} FCFA</div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Statut paiement</label>
+                    <span class="badge bg-{% if object.reservation.payment_status == 'paid' %}success{% elif object.reservation.payment_status == 'pending' %}warning{% else %}danger{% endif %}">
+                        {{ object.reservation.get_payment_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a href="{% url 'reservations:reservation_detail' object.reservation.id %}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-eye me-2"></i>
+                Voir les détails de la réservation
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Actions rapides 
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3">
+            <i class="fas fa-bolt me-2"></i>
+            Actions Rapides
+        </h6>
+        <div class="d-grid gap-2">
+            {% if object.status == 'confirmed' and not object.reservation %}
+            <button class="btn btn-primary" onclick="createReservation()">
+                <i class="fas fa-calendar-plus me-2"></i>
+                Réserver le terrain
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>-->
+
+<!-- Statistiques 
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3">
+            <i class="fas fa-chart-bar me-2"></i>
+            Statistiques
+        </h6>
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted">Taux de remplissage</span>
+                <span class="fw-semibold">{{ object.participation_rate|floatformat:1 }}%</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar" style="width: {{ object.participation_rate }}%"></div>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">Places disponibles</span>
+                <span class="fw-semibold">{{ object.available_spots }}</span>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">Statut inscription</span>
+                <span class="fw-semibold">
+                    {% if object.registration_open %}
+                    <span class="badge bg-success">Ouvertes</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Fermées</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>-->
+{% endblock %}
+
+{% block timeline_events %}
+{% if object.status == 'confirmed' %}
+<div class="timeline-item">
+    <div class="timeline-marker bg-success"></div>
+    <div class="timeline-content">
+        <div class="fw-semibold">Confirmation</div>
+        <small class="text-muted">Activité confirmée</small>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmActivity() {
+    if (confirm('Êtes-vous sûr de vouloir confirmer cette activité ?')) {
+        fetch(`/activities/{{ object.id }}/confirm/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erreur lors de la confirmation: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors de la confirmation.');
+        });
+    }
+}
+
+function cancelActivity() {
+    if (confirm('Êtes-vous sûr de vouloir annuler cette activité ?')) {
+        fetch(`/activities/{{ object.id }}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erreur lors de l\'annulation: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors de l\'annulation.');
+        });
+    }
+}
+
+function createReservation() {
+    if (confirm('Voulez-vous réserver le terrain pour cette activité ?\n\nLe formulaire de réservation sera pré-rempli avec les informations de l\'activité.')) {
+        window.location.href = `{% url 'reservations:reservation_create' %}?activity_id={{ object.id }}`;
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,364 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Mon Profil - GestSport{% endblock %}
+
+{% block breadcrumb %}Mon Profil{% endblock %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #263b99 0%, #1c049f 100%); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    <div class="user-avatar" style="width: 80px; height: 80px; font-size: 2rem; margin: 0 auto;">
+                        {{ user.get_full_name.0|default:user.email.0|upper }}
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <h2 class="mb-2">{{ user.get_full_name|default:user.email }}</h2>
+                    <p class="mb-2 opacity-75">{{ user.email }}</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-light text-dark">{{ user.get_role_display }}</span>
+                        <span class="badge bg-{% if user.is_active %}success{% else %}danger{% endif %}">
+                            {% if user.is_active %}Actif{% else %}Inactif{% endif %}
+                        </span>
+                        <span class="badge bg-info">Membre depuis {{ user.date_joined|date:"F Y" }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3 text-md-end">
+                    <a href="{% url 'users:profile_edit' %}" class="btn btn-light">
+                        <i class="fas fa-edit me-2"></i>Modifier le Profil
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card primary">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">RÉSERVATIONS</div>
+                    <div class="stat-value">{{ reservations_count|default:0 }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+12.5%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+            <canvas id="reservationsChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card success">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">ACTIVITÉS</div>
+                    <div class="stat-value">{{ activities_count|default:0 }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+8.3%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-running"></i>
+                </div>
+            </div>
+            <canvas id="activitiesChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card info">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">DÉPENSES</div>
+                    <div class="stat-value">{{ total_spent|default:0 }} FCFA</div>
+                    <div class="stat-change negative">
+                        <i class="fas fa-arrow-down me-1"></i>-5.2%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+            </div>
+            <canvas id="spendingChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card warning">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">POINTS</div>
+                    <div class="stat-value">250</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+25
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+            </div>
+            <canvas id="pointsChart" height="60"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Personal Information -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-id-card me-2"></i>
+                    Informations Personnelles
+                </h6>
+                <a href="{% url 'users:profile_edit' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit me-2"></i>Modifier
+                </a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Prénom</label>
+                    <p class="mb-0 fw-semibold">{{ user.first_name|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Nom</label>
+                    <p class="mb-0 fw-semibold">{{ user.last_name|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Email</label>
+                    <p class="mb-0 fw-semibold">{{ user.email }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Téléphone</label>
+                    <p class="mb-0 fw-semibold">{{ user.phone|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Date de Naissance</label>
+                    <p class="mb-0 fw-semibold">{{ user.date_of_birth|date:"d/m/Y"|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Ville</label>
+                    <p class="mb-0 fw-semibold">{{ user.city|default:"Non renseigné" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Address Information -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    Adresse
+                </h6>
+                <a href="{% url 'users:profile_edit' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit me-2"></i>Modifier
+                </a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Adresse</label>
+                    <p class="mb-0 fw-semibold">{{ user.address|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Code Postal</label>
+                    <p class="mb-0 fw-semibold">{{ user.postal_code|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="small text-muted">Pays</label>
+                    <p class="mb-0 fw-semibold">{{ user.country|default:"Non renseigné" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Activité Récente
+                </h6>
+                <a href="{% url 'reservations:reservation_list' %}" class="btn btn-sm btn-outline-primary">
+                    Voir tout
+                </a>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><i class="fas fa-calendar text-primary me-2"></i>Réservation</td>
+                            <td>Terrain A - Football</td>
+                            <td>Il y a 2 jours</td>
+                            <td><span class="badge bg-success">Confirmée</span></td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-running text-success me-2"></i>Activité</td>
+                            <td>Tournoi de Tennis</td>
+                            <td>Il y a 1 semaine</td>
+                            <td><span class="badge bg-info">Terminée</span></td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-credit-card text-warning me-2"></i>Paiement</td>
+                            <td>Abonnement Mensuel</td>
+                            <td>Il y a 2 semaines</td>
+                            <td><span class="badge bg-success">Payé</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Quick Actions -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Actions Rapides</h6>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>
+                    Modifier le profil
+                </a>
+                <a href="{% url 'users:settings' %}" class="btn btn-info">
+                    <i class="fas fa-cog me-2"></i>
+                    Paramètres
+                </a>
+                <a href="{% url 'reservations:reservation_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>
+                    Nouvelle réservation
+                </a>
+                <a href="{% url 'terrains:terrain_list' %}" class="btn btn-warning">
+                    <i class="fas fa-search me-2"></i>
+                    Voir les terrains
+                </a>
+            </div>
+        </div>
+        
+        <!-- Membership Status -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Statut Membre</h6>
+            
+            <div class="text-center mb-3">
+                <div class="social-icon facebook mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h5>Membre Premium</h5>
+                <p class="text-muted small">Valide jusqu'au 31/12/2024</p>
+            </div>
+            
+            <div class="d-grid">
+                <button class="btn btn-outline-primary">
+                    <i class="fas fa-sync me-2"></i>
+                    Renouveler
+                </button>
+            </div>
+        </div>
+        
+        <!-- Preferences -->
+        <div class="progress-card">
+            <h6 class="mb-4">Préférences</h6>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                        <label class="form-check-label" for="emailNotifications">
+                            Notifications email
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="smsNotifications">
+                        <label class="form-check-label" for="smsNotifications">
+                            Notifications SMS
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="publicProfile" checked>
+                        <label class="form-check-label" for="publicProfile">
+                            Profil public
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label for="language" class="small text-muted">Langue</label>
+                <select class="form-select form-select-sm" id="language">
+                    <option value="fr" selected>Français</option>
+                    <option value="en">English</option>
+                    <option value="ar">العربية</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mini Charts for Stats
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts
+createMiniChart('reservationsChart', [8, 10, 9, 12, 11, 14, 12], '#4e73df');
+createMiniChart('activitiesChart', [3, 4, 5, 4, 6, 5, 6], '#1cc88a');
+createMiniChart('spendingChart', [150, 120, 180, 140, 160, 130, 145], '#36b9cc');
+createMiniChart('pointsChart', [200, 210, 220, 230, 240, 250, 250], '#f6c23e');
+</script>
+{% endblock %}

@@ -1,0 +1,573 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}Notifications - GestSport{% endblock %}
+
+{% block breadcrumb %}Notifications{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>
+       
+        Notifications
+    </h4>
+    
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+               
+                <p>TOTAL </p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ total_notifications }} notifications</p>
+                <canvas id="miniTotalNotificationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+               
+                <p>NON LUES</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ unread_percentage|floatformat:1 }}% non lues</p>
+                <canvas id="miniUnreadNotificationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                
+                <p>PAIEMENTS</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ payment_percentage|floatformat:1 }}% paiements</p>
+                <canvas id="miniPaymentNotificationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                
+                <p>CONFIRMATIONS</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ confirmation_percentage|floatformat:1 }}% confirmations</p>
+                <canvas id="miniConfirmationNotificationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            Filtres
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Type</label>
+                <select name="type" class="form-select">
+                    <option value="">Tous les types</option>
+                    <option value="payment" {% if request.GET.type == 'payment' %}selected{% endif %}>Paiements</option>
+                    <option value="confirmation" {% if request.GET.type == 'confirmation' %}selected{% endif %}>Confirmations</option>
+                    <option value="rejection" {% if request.GET.type == 'rejection' %}selected{% endif %}>Rejets</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Statut</label>
+                <select name="status" class="form-select">
+                    <option value="">Tous les statuts</option>
+                    <option value="unread" {% if request.GET.status == 'unread' %}selected{% endif %}>Non lues</option>
+                    <option value="read" {% if request.GET.status == 'read' %}selected{% endif %}>Lues</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Période</label>
+                <select name="period" class="form-select">
+                    <option value="">Toutes les périodes</option>
+                    <option value="today" {% if request.GET.period == 'today' %}selected{% endif %}>Aujourd'hui</option>
+                    <option value="week" {% if request.GET.period == 'week' %}selected{% endif %}>Cette semaine</option>
+                    <option value="month" {% if request.GET.period == 'month' %}selected{% endif %}>Ce mois</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-info">
+                    Filtrer
+                </button>
+                <a href="{% url 'notifications:notification_list' %}" class="btn btn-outline-secondary">
+                    Réinitialiser
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des notifications -->
+{% if notifications %}
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">
+                
+                Liste des notifications
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th></th>
+                            <th>Message</th>
+                            <th>Type</th>
+                            <th>Réservation</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                            <th width="120">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for notification in notifications %}
+                            <tr class="{% if not notification.is_read %}table-warning{% endif %}">
+                                <td>
+                                    {% if notification.notification_type in 'payment_submission payment_validated payment_rejected coach_payment' %}
+                                        <i class="fas fa-credit-card text-success"></i>
+                                    {% elif notification.notification_type == 'reservation_confirmed' %}
+                                        <i class="fas fa-check-circle text-info"></i>
+                                    {% elif notification.notification_type == 'reservation_rejected' %}
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                    {% elif notification.notification_type in 'activity_reminder activity_cancelled activity_modified' %}
+                                        <i class="fas fa-calendar-alt text-warning"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle text-info"></i>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="{% if not notification.is_read %}fw-bold{% endif %}">
+                                        <strong>{{ notification.title }}</strong><br>
+                                        <small class="text-muted">{{ notification.message }}</small>
+                                    </div>
+                                    {% if not notification.is_read %}
+                                        <span class="badge bg-warning text-dark">Non lue</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if notification.notification_type in 'payment_submission payment_validated payment_rejected coach_payment' %}
+                                        <span class="badge bg-success">Paiement</span>
+                                    {% elif notification.notification_type == 'reservation_confirmed' %}
+                                        <span class="badge bg-info">Confirmation</span>
+                                    {% elif notification.notification_type == 'reservation_rejected' %}
+                                        <span class="badge bg-danger">Rejet</span>
+                                    {% elif notification.notification_type in 'activity_reminder activity_cancelled activity_modified' %}
+                                        <span class="badge bg-warning">Activité</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Info</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if notification.content_type and notification.object_id %}
+                                        {% if notification.content_type.model == 'reservation' %}
+                                            <a href="/reservations/{{ notification.object_id }}/" class="text-decoration-none">
+                                                {{ notification.object_id }}
+                                            </a>
+                                        {% elif notification.content_type.model == 'activity' %}
+                                            <a href="/activities/{{ notification.object_id }}/" class="text-decoration-none">
+                                                Activité {{ notification.object_id }}
+                                            </a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        
+                                        <span class="time-ago" data-time="{{ notification.created_at|date:'Y-m-d H:i:s' }}">
+                                            {{ notification.created_at|date:'d/m/Y H:i' }}
+                                        </span>
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if not notification.is_read %}
+                                        <span class="badge bg-warning">Non lue</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Lue</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        {% if notification.content_type and notification.object_id %}
+                                            {% if notification.content_type.model == 'reservation' %}
+                                                <a href="/reservations/{{ notification.object_id }}/" 
+                                                   class="btn btn-outline-info" 
+                                                   title="Voir la réservation">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% elif notification.content_type.model == 'activity' %}
+                                                <a href="/activities/{{ notification.object_id }}/" 
+                                                   class="btn btn-outline-info" 
+                                                   title="Voir l'activité">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if not notification.is_read %}
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="markNotificationRead('{{ notification.id }}')"
+                                                    title="Marquer comme lue">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn btn-outline-secondary" 
+                                                onclick="deleteNotification('{{ notification.id }}')"
+                                                title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <div class="d-flex justify-content-center mt-4">
+            <nav>
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+
+{% else %}
+    <!-- Empty State -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-bell-slash fa-4x text-muted"></i>
+            </div>
+            <h5 class="text-muted mb-3">Aucune notification</h5>
+            <p class="text-muted">
+                Vous n'avez pas de notifications pour le moment.
+            </p>
+            <div class="mt-4">
+                <img src="{% static 'img/illustrations/empty-notifications.svg' %}" 
+                     alt="No notifications" 
+                     class="img-fluid" 
+                     style="max-width: 200px; opacity: 0.5;">
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<style>
+.table-warning {
+    background-color: #fff8e1 !important;
+}
+
+.table-warning:hover {
+    background-color: #fff3c4 !important;
+}
+
+.time-ago {
+    font-size: 0.85rem;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.card-body.p-0 .table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start !important;
+    }
+    
+    .btn-group {
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+</style>
+
+<script>
+// Auto-rafraîchissement toutes les 30 secondes
+setInterval(function() {
+    updateNotificationCount();
+    fetch('/notifications/count/')
+        .then(response => response.json())
+        .then(data => {
+            const currentCount = document.querySelectorAll('.notification-card, tbody tr').length;
+            if (data.count > currentCount) {
+                location.reload();
+            }
+        });
+}, 30000);
+
+function updateNotificationCount() {
+    fetch('/notifications/count/')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('notification-count');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.className = data.count > 0 ? 
+                    'badge bg-danger position-absolute top-0 start-100 translate-middle' : 
+                    'badge bg-secondary position-absolute top-0 start-100 translate-middle';
+            }
+        });
+}
+
+function markAllAsRead() {
+    fetch('/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function markNotificationRead(notificationId) {
+    fetch(`/notifications/mark-read/${notificationId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function deleteNotification(notificationId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette notification ?')) {
+        fetch(`/notifications/delete/${notificationId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Formatage du temps relatif
+function formatTimeAgo() {
+    const timeElements = document.querySelectorAll('.time-ago');
+    timeElements.forEach(element => {
+        const time = new Date(element.dataset.time);
+        const now = new Date();
+        const diff = Math.floor((now - time) / 1000);
+        
+        let text = '';
+        if (diff < 60) {
+            text = 'Il y a un instants';
+        } else if (diff < 3600) {
+            text = `Il y a ${Math.floor(diff / 60)} minute(s)`;
+        } else if (diff < 86400) {
+            text = `Il y a ${Math.floor(diff / 3600)} heure(s)`;
+        } else {
+            text = `Il y a ${Math.floor(diff / 86400)} jour(s)`;
+        }
+        
+        element.textContent = text;
+    });
+}
+
+formatTimeAgo();
+setInterval(formatTimeAgo, 60000);
+</script>
+{% endblock %}

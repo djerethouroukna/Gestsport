@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ terrain.name }} - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{% url 'terrains:terrain_list' %}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="fas fa-arrow-left me-1"></i>Retour
+            </a>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Images et infos principales -->
+        <div class="col-lg-7">
+            <!-- Image principale -->
+            <div class="card shadow-sm mb-4">
+                <img src="https://via.placeholder.com/800x400?text={{ terrain.name }}" class="card-img-top" alt="{{ terrain.name }}" style="height: 400px; object-fit: cover;">
+            </div>
+            
+            <!-- Photos supplémentaires -->
+            <div class="row g-2 mb-4">
+                <div class="col-md-3">
+                    <img src="https://via.placeholder.com/200x150?text=Photo1" class="img-fluid rounded" alt="Photo 1" style="cursor: pointer;">
+                </div>
+                <div class="col-md-3">
+                    <img src="https://via.placeholder.com/200x150?text=Photo2" class="img-fluid rounded" alt="Photo 2" style="cursor: pointer;">
+                </div>
+                <div class="col-md-3">
+                    <img src="https://via.placeholder.com/200x150?text=Photo3" class="img-fluid rounded" alt="Photo 3" style="cursor: pointer;">
+                </div>
+                <div class="col-md-3">
+                    <img src="https://via.placeholder.com/200x150?text=Photo4" class="img-fluid rounded" alt="Photo 4" style="cursor: pointer;">
+                </div>
+            </div>
+            
+            <!-- Description -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Description
+                    </h4>
+                    <p>{{ terrain.description }}</p>
+                </div>
+            </div>
+            
+            <!-- Équipements -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="mb-3">
+                        <i class="fas fa-tools me-2"></i>Équipements
+                    </h4>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-success me-3 fa-lg"></i>
+                                <span>Vestiaires</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-success me-3 fa-lg"></i>
+                                <span>Parking</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-success me-3 fa-lg"></i>
+                                <span>Éclairage</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-success me-3 fa-lg"></i>
+                                <span>Toilettes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Avis -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="mb-4">
+                        <i class="fas fa-star me-2 text-warning"></i>Avis (45)
+                    </h4>
+                    
+                    {% for i in "12345" %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong>Jean Dupont</strong>
+                                <div class="text-warning small">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                            </div>
+                            <small class="text-muted">Il y a 2 jours</small>
+                        </div>
+                        <p class="text-muted">Excellent terrain avec très bon éclairage. Équipe à l'écoute des besoins. Je recommande vivement !</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar réservation -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm sticky-lg-top" style="top: 80px;">
+                <div class="card-body">
+                    <!-- Infos principales -->
+                    <h2 class="mb-2">{{ terrain.name }}</h2>
+                    <div class="mb-3">
+                        <span class="badge bg-success">{{ terrain.get_terrain_type_display }}</span>
+                        <span class="badge bg-info">{{ terrain.status }}</span>
+                    </div>
+                    
+                    <!-- Note -->
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="text-warning me-2">
+                            {% for i in "12345" %}
+                            <i class="fas fa-star"></i>
+                            {% endfor %}
+                        </div>
+                        <strong>4.5/5</strong>
+                        <span class="text-muted ms-2">(45 avis)</span>
+                    </div>
+                    
+                    <!-- Prix -->
+                    <div class="alert alert-info mb-4">
+                        <h4 class="mb-0">
+                            <i class="fas fa-credit-card me-2"></i>
+                            {{ terrain.price_per_hour }}FCFA <small class="text-muted">/heure</small>
+                        </h4>
+                    </div>
+                    
+                    <!-- Infos -->
+                    <div class="mb-4">
+                        <p class="mb-2">
+                            <i class="fas fa-users me-2 text-primary"></i>
+                            <strong>Capacité :</strong> {{ terrain.capacity }} personnes
+                        </p>
+                        <p class="mb-2">
+                            <i class="fas fa-location-dot me-2 text-primary"></i>
+                            <strong>Localisation :</strong> 123 Rue de 10 Octobre, 75000 N'Djamena
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-clock me-2 text-primary"></i>
+                            <strong>Horaires :</strong> 05h00 - 23h59
+                        </p>
+                    </div>
+                    
+                    <!-- Bouton réservation -->
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'reservations:reservation_create' %}?terrain={{ terrain.id }}" class="btn btn-primary btn-lg w-100 fw-bold">
+                        <i class="fas fa-calendar-plus me-2"></i>Réserver Maintenant
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100 fw-bold">
+                        <i class="fas fa-sign-in-alt me-2"></i>Se Connecter pour Réserver
+                    </a>
+                    {% endif %}
+                    
+                    <button class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="fas fa-heart me-2"></i>Ajouter aux favoris
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

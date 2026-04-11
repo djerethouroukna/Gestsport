@@ -1,0 +1,391 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Scanner Tickets{% endblock %}
+
+{% block breadcrumb %}Tickets > Scanner{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="fas fa-qrcode me-2 text-primary"></i>Scanner un Ticket
+                </h5>
+                <span class="badge bg-success" id="scanner-status">Prêt</span>
+            </div>
+            
+            <!-- Zone de scan -->
+            <div id="qr-reader" style="width: 100%; height: 300px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                <div class="text-center">
+                    <i class="fas fa-qrcode fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Positionnez le QR code dans la zone de scan</p>
+                    <button id="start-scan-btn" class="btn btn-primary mt-2">
+                        <i class="fas fa-camera me-2"></i>Démarrer le Scanner
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Contrôles du scanner -->
+            <div class="mt-3 d-flex gap-2">
+                <button id="stop-scan-btn" class="btn btn-danger" style="display: none;">
+                    <i class="fas fa-stop me-2"></i>Arrêter
+                </button>
+                <button id="reset-scan-btn" class="btn btn-secondary">
+                    <i class="fas fa-redo me-2"></i>Réinitialiser
+                </button>
+            </div>
+            
+            <!-- Résultat du scan -->
+            <div id="scan-result" class="mt-3" style="display: none;">
+                <!-- Contenu dynamique -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">
+                    <i class="fas fa-history me-2 text-info"></i>Historique des Scans
+                </h6>
+                <button id="refresh-history-btn" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-sync"></i>
+                </button>
+            </div>
+            
+            <div id="scan-history" class="mt-3">
+                <div class="text-center text-muted">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p class="small mt-2">Chargement de l'historique...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistiques -->
+        <div class="progress-card mt-3">
+            <h6 class="mb-3">
+                <i class="fas fa-chart-bar me-2 text-warning"></i>Statistiques du Jour
+            </h6>
+            
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="border rounded p-2">
+                        <div class="h4 mb-0 text-success" id="scans-today">0</div>
+                        <small class="text-muted">Scans aujourd'hui</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border rounded p-2">
+                        <div class="h4 mb-0 text-info" id="scans-total">0</div>
+                        <small class="text-muted">Total scans</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour les résultats de scan -->
+<div class="modal fade" id="scanResultModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-ticket-alt me-2"></i>Résultat du Scan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modal-scan-result">
+                <!-- Contenu dynamique -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+let html5QrCode = null;
+let isScanning = false;
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function startScanner() {
+    if (isScanning) return;
+    
+    console.log('Démarrage du scanner...');
+    isScanning = true;
+    
+    document.getElementById('scanner-status').textContent = 'En cours';
+    document.getElementById('scanner-status').className = 'badge bg-warning';
+    document.getElementById('start-scan-btn').style.display = 'none';
+    document.getElementById('stop-scan-btn').style.display = 'inline-block';
+    
+    const qrReaderElement = document.getElementById('qr-reader');
+    qrReaderElement.innerHTML = ''; // Vider la zone
+    
+    html5QrCode = new Html5Qrcode("qr-reader");
+    
+    Html5QrCode.getCameras().then(devices => {
+        if (devices && devices.length) {
+            const cameraId = devices[0].id;
+            
+            html5QrCode.start(
+                cameraId,
+                {
+                    fps: 10,
+                    qrbox: {width: 250, height: 250}
+                },
+                (decodedText, decodedResult) => {
+                    // QR code détecté
+                    console.log('QR code détecté:', decodedText);
+                    stopScanner();
+                    validateTicket(decodedText);
+                },
+                (errorMessage) => {
+                    // Ignorer les erreurs de scan normales
+                }
+            ).catch(err => {
+                console.error(`Impossible de démarrer le scan: ${err}`);
+                showScanError('Impossible d\'accéder à la caméra');
+                stopScanner();
+            });
+        } else {
+            showScanError('Aucune caméra détectée');
+            stopScanner();
+        }
+    }).catch(err => {
+        console.error(`Erreur caméra: ${err}`);
+        showScanError('Erreur lors de l\'accès à la caméra');
+        stopScanner();
+    });
+}
+
+function stopScanner() {
+    if (!isScanning) return;
+    
+    console.log('Arrêt du scanner...');
+    isScanning = false;
+    
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            console.log('Scanner arrêté');
+        }).catch(err => {
+            console.error('Erreur arrêt scanner:', err);
+        });
+    }
+    
+    document.getElementById('scanner-status').textContent = 'Prêt';
+    document.getElementById('scanner-status').className = 'badge bg-success';
+    document.getElementById('start-scan-btn').style.display = 'inline-block';
+    document.getElementById('stop-scan-btn').style.display = 'none';
+    
+    // Restaurer l'interface par défaut
+    const qrReaderElement = document.getElementById('qr-reader');
+    qrReaderElement.innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-qrcode fa-3x text-muted mb-3"></i>
+            <p class="text-muted">Positionnez le QR code dans la zone de scan</p>
+            <button id="start-scan-btn" class="btn btn-primary mt-2">
+                <i class="fas fa-camera me-2"></i>Démarrer le Scanner
+            </button>
+        </div>
+    `;
+    
+    // Ré-attacher l'événement
+    document.getElementById('start-scan-btn').addEventListener('click', startScanner);
+}
+
+function validateTicket(qrData) {
+    console.log('Validation du ticket:', qrData);
+    
+    fetch('/tickets/api/scan/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({qr_data: qrData})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showScanResult(data, 'success');
+            loadScanHistory();
+            updateStatistics();
+        } else {
+            showScanResult(data, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur validation:', error);
+        showScanResult({error: 'Erreur technique lors de la validation'}, 'error');
+    });
+}
+
+function showScanResult(data, type) {
+    const modal = new bootstrap.Modal(document.getElementById('scanResultModal'));
+    const resultDiv = document.getElementById('modal-scan-result');
+    
+    if (type === 'success') {
+        resultDiv.innerHTML = `
+            <div class="alert alert-success">
+                <h6><i class="fas fa-check-circle me-2"></i>Ticket Validé avec Succès</h6>
+                <div class="mt-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Numéro:</strong><br>
+                            ${data.ticket.number}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Activité:</strong><br>
+                            ${data.ticket.activity}
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <strong>Terrain:</strong><br>
+                            ${data.ticket.terrain}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Coach:</strong><br>
+                            ${data.ticket.coach}
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <strong>Date:</strong><br>
+                            ${new Date(data.ticket.date).toLocaleString('fr-FR')}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Validé par:</strong><br>
+                            ${data.ticket.validated_by}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <h6><i class="fas fa-times-circle me-2"></i>Erreur de Validation</h6>
+                <p class="mb-2">${data.error}</p>
+                ${data.used_at ? `
+                    <small class="text-muted">
+                        <strong>Utilisé le:</strong> ${new Date(data.used_at).toLocaleString('fr-FR')}<br>
+                        ${data.used_by ? `<strong>Par:</strong> ${data.used_by}` : ''}
+                    </small>
+                ` : ''}
+            </div>
+        `;
+    }
+    
+    modal.show();
+}
+
+function showScanError(message) {
+    const resultDiv = document.getElementById('scan-result');
+    resultDiv.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${message}
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+}
+
+function loadScanHistory() {
+    fetch('/tickets/api/history/')
+    .then(response => response.json())
+    .then(data => {
+        const historyDiv = document.getElementById('scan-history');
+        
+        if (data.scans && data.scans.length > 0) {
+            historyDiv.innerHTML = data.scans.map(scan => `
+                <div class="mb-2 p-2 border rounded">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${scan.ticket_number}</strong><br>
+                            <small class="text-muted">${scan.activity}</small><br>
+                            <small class="text-muted">${scan.terrain}</small>
+                        </div>
+                        <small class="text-muted">
+                            ${new Date(scan.scanned_at).toLocaleTimeString('fr-FR', {
+                                hour: '2-digit', 
+                                minute: '2-digit'
+                            })}
+                        </small>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            historyDiv.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-history fa-2x mb-2"></i>
+                    <p class="small">Aucun scan aujourd'hui</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Erreur historique:', error);
+        document.getElementById('scan-history').innerHTML = `
+            <div class="text-center text-danger">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <p class="small">Erreur de chargement</p>
+            </div>
+        `;
+    });
+}
+
+function updateStatistics() {
+    // Mettre à jour les statistiques (simulation pour l'instant)
+    const scansToday = document.getElementById('scans-today');
+    const scansTotal = document.getElementById('scans-total');
+    
+    // Simuler une incrémentation
+    if (scansToday) {
+        scansToday.textContent = parseInt(scansToday.textContent) + 1;
+    }
+    if (scansTotal) {
+        scansTotal.textContent = parseInt(scansTotal.textContent) + 1;
+    }
+}
+
+function resetScanner() {
+    stopScanner();
+    document.getElementById('scan-result').style.display = 'none';
+    document.getElementById('scan-result').innerHTML = '';
+}
+
+// Événements
+document.addEventListener('DOMContentLoaded', function() {
+    // Boutons principaux
+    document.getElementById('start-scan-btn').addEventListener('click', startScanner);
+    document.getElementById('stop-scan-btn').addEventListener('click', stopScanner);
+    document.getElementById('reset-scan-btn').addEventListener('click', resetScanner);
+    document.getElementById('refresh-history-btn').addEventListener('click', loadScanHistory);
+    
+    // Charger l'historique initial
+    loadScanHistory();
+});
+</script>
+{% endblock %}

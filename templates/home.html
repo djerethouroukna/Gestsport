@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Accueil - GestSport{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h1 class="display-4 fw-bold mb-4">
+                    <i class="fas fa-futbol me-2 text-warning"></i>
+                    Réservez Vos Terrains Facilement
+                </h1>
+                <p class="lead mb-4">Découvrez, réservez et jouez aux meilleurs terrains sportifs de la ville</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    {% if not user.is_authenticated %}
+                        <a href="{% url 'login' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Connexion
+                        </a>
+                        <a href="{% url 'users:register' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>S'inscrire
+                        </a>
+                    {% else %}
+                        <a href="{% url 'terrains:terrain_list' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>Découvrir les Terrains
+                        </a>
+                        <a href="{% url 'reservations:reservation_list' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-calendar me-2"></i>Mes Réservations
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="https://via.placeholder.com/500x400?text=Terrains+Sportifs" alt="Terrains" class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Fonctionnalités -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold">Pourquoi Nous Choisir ?</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-map-marker-alt fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Localisation</h5>
+                        <p class="card-text">Trouvez les terrains proches de vous</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-calendar-alt fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Disponibilité</h5>
+                        <p class="card-text">Consultez les créneaux disponibles en temps réel</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-credit-card fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Paiement Sécurisé</h5>
+                        <p class="card-text">Plusieurs moyens de paiement acceptés</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Types de sports -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold">Nos Sports</h2>
+        <div class="row g-4">
+            {% for sport in sports %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm text-center">
+                    <div class="card-body">
+                        <i class="fas fa-3x mb-3 {% if sport == 'football' %}fas-futbol text-success{% elif sport == 'tennis' %}fas-racquet-squash text-info{% elif sport == 'basketball' %}fas-basketball text-warning{% elif sport == 'volleyball' %}fas-volleyball text-danger{% else %}fas-dumbbell text-primary{% endif %}"></i>
+                        <h5 class="card-title">{{ sport|upper }}</h5>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <p class="text-center text-muted">Football, Tennis, Basketball, Volleyball, Handball</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+    .bg-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>
+{% endblock %}

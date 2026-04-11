@@ -1,0 +1,536 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Admin - GestSport{% endblock %}
+
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 0%;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1.5rem;
+}
+</style>
+<!-- KPIs -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    
+                    <p>{{ total_reservations }} RÉSERVATIONS</p>
+                </div>
+                <div class="card-bottom">
+                    <p>40.9% </p>
+                    <canvas id="miniReservationsChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    
+                    <p>{{ pending_reservations }} EN ATTENTE</p>
+                </div>
+                <div class="card-bottom">
+                    <p>-12.4%</p>
+                    <canvas id="miniPendingChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    
+                    <p>{{ total_terrains }} TERRAINS</p>
+                </div>
+                <div class="card-bottom">
+                    <p>15.3%</p>
+                    <canvas id="miniTerrainsChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    
+                    <p>{{ total_users }} UTILISATEURS</p>
+                </div>
+                <div class="card-bottom">
+                    <p>22.8%</p>
+                    <canvas id="miniUsersChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Graphiques -->
+<div class="col-xl-12 mb-4">
+    <div class="card shadow border-0" style="border-radius: 0; overflow: hidden;">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0" style="font-weight: 800; color: #f1f3f5; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">
+                <i class="fas fa-chart-line me-2 text-success"></i>Statistique Mensuel
+            </h6>
+        </div>
+        
+        <div class="card-body pt-0">
+            <div style="position: relative; height: 250px;">
+                <canvas id="reservationsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+    
+<!-- Social Media Cards 
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="row">
+            <div class="col-sm-6 mb-4">
+                <a href="https://www.facebook.com/TON_PROFIL_OU_PAGE"
+                    target="_blank"
+                    class="text-decoration-none text-dark">
+
+                    <div class="social-card">
+                        <div class="social-icon facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </div>
+
+                            <h6 class="mb-1">Facebook</h6>
+                            <div class="small text-muted mb-2">89K Friends</div>
+                            <div class="small text-muted">459 Feeds</div>
+
+                            <canvas id="facebookChart" height="50"></canvas>
+                    </div>
+
+                </a>
+            </div>            
+            <div class="col-sm-6 mb-4">
+                <a href="https://twitter.com/TON_COMPTE"
+                target="_blank"
+                class="text-decoration-none text-dark">
+
+                        <div class="social-card">
+                            <div class="social-icon twitter">
+                                <i class="fab fa-twitter"></i>
+                            </div>
+
+                            <h6 class="mb-1">Twitter</h6>
+                            <div class="small text-muted mb-2">973K Followers</div>
+                            <div class="small text-muted">1.792 Tweets</div>
+
+                            <canvas id="twitterChart" height="50"></canvas>
+                        </div>
+
+                </a>
+            </div>
+
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <div class="row">
+            <div class="col-sm-6 mb-4">
+                <a href="https://www.linkedin.com/in/TON_PROFIL_LINKEDIN"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-decoration-none text-dark">
+
+                    <div class="social-card">
+                        <div class="social-icon linkedin">
+                            <i class="fab fa-linkedin-in"></i>
+                        </div>
+
+                        <h6 class="mb-1">LinkedIn</h6>
+                        <div class="small text-muted mb-2">45K Connections</div>
+                        <div class="small text-muted">1.2K Posts</div>
+                        <canvas id="linkedinChart" height="50"></canvas>
+                    </div>
+
+                </a>
+            </div>
+
+            
+            <div class="col-sm-6 mb-4">
+                <div class="social-card">
+                    <div class="social-icon calendar">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h6 class="mb-1">Calendrier</h6>
+                    <div class="small text-muted mb-2">12+ Events</div>
+                    <div class="small text-muted">4 Meetings</div>
+                    <canvas id="calendarChart" height="50"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Traffic & Sales Section 
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Traffic & Sales</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        This Week
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Today</a></li>
+                        <li><a class="dropdown-item" href="#">This Week</a></li>
+                        <li><a class="dropdown-item" href="#">This Month</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="row text-center mb-4">
+                <div class="col-sm-3 mb-3">
+                    <div class="h4 mb-1">9,123</div>
+                    <div class="small text-muted">New Clients</div>
+                </div>
+                <div class="col-sm-3 mb-3">
+                    <div class="h4 mb-1">22,643</div>
+                    <div class="small text-muted">Recurring Clients</div>
+                </div>
+                <div class="col-sm-3 mb-3">
+                    <div class="h4 mb-1">78,623</div>
+                    <div class="small text-muted">Pageviews</div>
+                </div>
+                <div class="col-sm-3 mb-3">
+                    <div class="h4 mb-1">49,123</div>
+                    <div class="small text-muted">Organic</div>
+                </div>
+            </div>
+            
+            <canvas id="trafficChart" height="120"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-lg-5">
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">Progress Overview</h6>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Lundi</div>
+                    <div class="small">65%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: 65%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Mardi</div>
+                    <div class="small">78%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: 78%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Mercredi</div>
+                    <div class="small">45%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-info" style="width: 45%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Jeudi</div>
+                    <div class="small">89%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-warning" style="width: 89%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Vendredi</div>
+                    <div class="small">92%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-danger" style="width: 92%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Samedi</div>
+                    <div class="small">53%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: 53%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Dimanche</div>
+                    <div class="small">47%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-pink" style="width: 47%; background: #e83e8c;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>-->
+
+<script>
+// Mini Charts for Stats Cards
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts for KPIs
+setTimeout(function() {
+    if (typeof Chart !== 'undefined') {
+        // Utiliser des IDs différents pour éviter les conflits
+        createMiniChart('miniReservationsChart', [20, 30, 25, 35, 40, 35, 40], '#1cc88a');
+        createMiniChart('miniPendingChart', [15, 12, 18, 14, 16, 12, 14], '#f6c23e');
+        createMiniChart('miniTerrainsChart', [8, 10, 9, 12, 11, 10, 12], '#36b9cc');
+        createMiniChart('miniUsersChart', [30, 25, 35, 30, 28, 32, 30], '#4e73df');
+    } else {
+        console.error('Chart.js pas encore chargé pour les mini-graphiques');
+    }
+}, 1000);
+
+// Initialize main charts with real data
+setTimeout(function() {
+    console.log('Initialisation des graphiques...');
+    
+    // Vérifier que Chart.js est chargé
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js n\'est pas chargé!');
+    } else {
+        console.log('Chart.js est chargé, création des graphiques...');
+        
+        // Graphique d'évolution des réservations avec vraies données
+        const reservationsCanvas = document.getElementById('reservationsChart');
+        if (reservationsCanvas) {
+            console.log('Canvas réservations trouvé:', reservationsCanvas);
+            const reservationsCtx = reservationsCanvas.getContext('2d');
+            
+            new Chart(reservationsCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ month_labels_json|safe }},
+                    datasets: [{
+                        label: 'Réservations',
+                        data: {{ reservations_chart_data_json|safe }},
+                        borderColor: '#2ECC71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            console.log('Graphique réservations créé');
+        } else {
+            console.error('Canvas réservations non trouvé!');
+        }
+    }
+}, 1000);
+
+// Social media charts
+setTimeout(function() {
+    if (typeof Chart !== 'undefined') {
+        createMiniChart('facebookChart', [30, 35, 32, 38, 35, 40, 38], '#3b5998');
+        createMiniChart('twitterChart', [20, 25, 30, 28, 35, 32, 35], '#1da1f2');
+        createMiniChart('linkedinChart', [15, 20, 18, 25, 22, 28, 25], '#0077b5');
+        createMiniChart('calendarChart', [25, 30, 28, 32, 30, 35, 33], '#6f42c1');
+    } else {
+        console.error('Chart.js pas encore chargé pour les graphiques sociaux');
+    }
+}, 2000);
+
+// Main Traffic Chart
+const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+new Chart(trafficCtx, {
+    type: 'line',
+    data: {
+        labels: {{ month_labels_json|safe }},
+        datasets: [{
+            label: 'Traffic',
+            data: [30000, 35000, 32000, 40000, 38000, 45000, 42000, 48000, 46000, 52000, 49000, 55000],
+            borderColor: '#4e73df',
+            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }, {
+            label: 'Sales',
+            data: [20000, 22000, 25000, 23000, 28000, 30000, 32000, 35000, 33000, 38000, 40000, 42000],
+            borderColor: '#1cc88a',
+            backgroundColor: 'rgba(28, 200, 138, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString();
+                    }
+                }
+            },
+            x: {
+                ticks: {
+                    display: false  // Masquer les labels des mois sur l'axe X
+                },
+                grid: {
+                    display: false  // Masquer également la grille de l'axe X
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

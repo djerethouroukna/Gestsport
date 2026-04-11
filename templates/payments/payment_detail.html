@@ -1,0 +1,276 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Détails du Paiement - GestSport{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête de la page -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">                      
+                        Détails du Paiement
+                    </h1>
+                </div>
+                <div>
+                    <a href="{% if request.user.role == 'admin' %}{% url 'payments:admin_payment_list' %}{% else %}{% url 'payments:payment-list' %}{% endif %}" class="btn btn-info">
+                        Retour à la liste
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations principales -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        Informations du Paiement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">ID du paiement</label>
+                                <p class="form-control-plaintext fw-bold">{{ payment.id|truncatechars:8 }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Montant</label>
+                                <p class="form-control-plaintext fw-bold text-success">{{ payment.amount }}F CFA</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Statut</label>
+                                <p class="form-control-plaintext">
+                                    {% if payment.status == 'completed' %}
+                                        <span class="badge bg-success">Complété</span>
+                                    {% elif payment.status == 'pending' %}
+                                        <span class="badge bg-warning">En attente</span>
+                                    {% elif payment.status == 'failed' %}
+                                        <span class="badge bg-danger">Échoué</span>
+                                    {% elif payment.status == 'simulated' %}
+                                        <span class="badge bg-info">Simulé</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ payment.get_status_display }}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Méthode de paiement</label>
+                                <p class="form-control-plaintext">
+                                    {% if payment.payment_method %}
+                                        
+                                        {{ payment.payment_method.display_name }}
+                                    {% else %}
+                                        
+                                        Non spécifié
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Date de création</label>
+                                <p class="form-control-plaintext">
+                                  
+                                    {{ payment.created_at|date:"d/m/Y H:i" }}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Date de paiement</label>
+                                <p class="form-control-plaintext">
+                                    {% if payment.paid_at %}
+                                        
+                                        {{ payment.paid_at|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                       
+                                        Non payé
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Type de paiement</label>
+                                <p class="form-control-plaintext">
+                                    {% if payment.is_simulated %}
+                                        <span class="badge bg-info">Simulation</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Réal</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if payment.notes %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Notes</label>
+                                <p class="form-control-plaintext">{{ payment.notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        Informations Entraineur
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Nom complet</label>
+                        <p class="form-control-plaintext fw-bold">{{ payment.user.get_full_name|default:payment.user.username }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Email</label>
+                        <p class="form-control-plaintext">{{ payment.user.email }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations sur la réservation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                       Information sur la réservation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Terrain</label>
+                                <p class="form-control-plaintext fw-bold">{{ payment.reservation.terrain.name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Type de terrain</label>
+                                <p class="form-control-plaintext">{{ payment.reservation.terrain.get_terrain_type_display }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Date de réservation</label>
+                                <p class="form-control-plaintext">
+                                    
+                                    {{ payment.reservation.start_time|date:"d/m/Y" }}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Heure de début</label>
+                                <p class="form-control-plaintext">
+                                    
+                                    {{ payment.reservation.start_time|time:"H:i" }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Heure de fin</label>
+                                <p class="form-control-plaintext">
+                                    
+                                    {{ payment.reservation.end_time|time:"H:i" }}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Durée</label>
+                                <p class="form-control-plaintext">
+                                    
+                                    {{ payment.reservation.duration }} minutes
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations de transaction -->
+    {% if payment.transaction %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>Informations de transaction
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">ID Transaction</label>
+                                <p class="form-control-plaintext fw-bold">{{ payment.transaction.transaction_id|default:"N/A" }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Statut de la transaction</label>
+                                <p class="form-control-plaintext">
+                                    {% if payment.transaction.status == 'completed' %}
+                                        <span class="badge bg-success">Complétée</span>
+                                    {% elif payment.transaction.status == 'pending' %}
+                                        <span class="badge bg-warning">En attente</span>
+                                    {% elif payment.transaction.status == 'failed' %}
+                                        <span class="badge bg-danger">Échouée</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ payment.transaction.get_status_display }}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Date de traitement</label>
+                                <p class="form-control-plaintext">
+                                    {% if payment.transaction.processed_at %}
+                                        {{ payment.transaction.processed_at|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        Non traitée
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if payment.transaction.failure_reason %}
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Raison d'échec</label>
+                                <p class="form-control-plaintext text-danger">{{ payment.transaction.failure_reason }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex gap-2">
+                        <a href="{% if request.user.role == 'admin' %}{% url 'payments:admin_payment_list' %}{% else %}{% url 'payments:payment-list' %}{% endif %}" class="btn btn-outline-secondary">
+                            Retour à la liste
+                        </a>
+                        {% if payment.invoice %}
+                        <a href="{% url 'payments:invoice_download' payment.invoice.invoice_number %}" class="btn btn-success">
+                            <i class="fas fa-file-pdf me-2"></i>Télécharger la facture
+                        </a>
+                        {% endif %}
+                        <button class="btn btn-outline-info" onclick="window.print()">
+                            Imprimer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

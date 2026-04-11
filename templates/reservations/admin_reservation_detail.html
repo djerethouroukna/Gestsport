@@ -1,0 +1,384 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Détails Réservation #{{ reservation.id }} - Admin{% endblock %}
+
+{% block breadcrumb %}Dashboard / Réservations / Détails #{{ reservation.id }}{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Détails Réservation {{ reservation.id }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'reservations:admin_reservation_list' %}" class="btn btn-sm btn-outline-secondary">
+                 Retour à la liste
+            </a>
+            <a href="{% url 'reservations:admin_dashboard' %}" class="btn btn-sm btn-outline-info">
+                 Réservation
+            </a>
+            <a href="/admin/reservations/reservation/{{ reservation.pk }}/change/" class="btn btn-sm btn-outline-warning">
+                 Modifier 
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Informations principales -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    
+                    Informations Générales
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>ID Réservation:</strong></td>
+                        <td>{{ reservation.id }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Statut:</strong></td>
+                        <td>
+                            {% if reservation.status == 'pending' %}
+                                <span class="badge bg-warning">En attente</span>
+                            {% elif reservation.status == 'confirmed' %}
+                                <span class="badge bg-info">Confirmée</span>
+                            {% elif reservation.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejetée</span>
+                            {% elif reservation.status == 'cancelled' %}
+                                <span class="badge bg-secondary">Annulée</span>
+                            {% elif reservation.status == 'completed' %}
+                                <span class="badge bg-success">Terminée</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Créée le:</strong></td>
+                        <td>{{ reservation.created_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Modifiée le:</strong></td>
+                        <td>{{ reservation.updated_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Paiement:</strong></td>
+                        <td>
+                            {% if reservation.is_paid %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Payé
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i>Non payé
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                  
+                    Utilisateur
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Nom:</strong></td>
+                        <td>{{ reservation.user.get_full_name|default:"Non spécifié" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email:</strong></td>
+                        <td>{{ reservation.user.email }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rôle:</strong></td>
+                        <td>
+                            <span class="badge bg-primary">{{ reservation.user.role|title }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Téléphone:</strong></td>
+                        <td>{{ reservation.user.phone|default:"Non spécifié" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informations de réservation -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    
+                    Terrain
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Nom:</strong></td>
+                        <td>{{ reservation.terrain.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type:</strong></td>
+                        <td>{{ reservation.terrain.terrain_type }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Capacité:</strong></td>
+                        <td>{{ reservation.terrain.capacity }} personnes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Prix/heure:</strong></td>
+                        <td>{{ reservation.terrain.price_per_hour }}  FCFA</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                   
+                    Date et Heure
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Date:</strong></td>
+                        <td>{{ reservation.start_time|date:"d/m/Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Début:</strong></td>
+                        <td>{{ reservation.start_time|date:"H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fin:</strong></td>
+                        <td>{{ reservation.end_time|date:"H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Durée:</strong></td>
+                        <td>{{ reservation.duration }} heures</td>
+                    </tr>
+                    {% if reservation.end_time < now %}
+                    <tr>
+                        <td><strong>État:</strong></td>
+                        <td>
+                            <span class="text-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Expirée
+                            </span>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informations du ticket -->
+{% if reservation.ticket %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    
+                    Ticket
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Numéro:</strong></td>
+                                <td><code>{{ reservation.ticket.ticket_number }}</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Créé le:</strong></td>
+                                <td>{{ reservation.ticket.created_at|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Validé le:</strong></td>
+                                <td>{{ reservation.ticket.validated_at|date:"d/m/Y H:i"|default:"Non validé" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Statut:</strong></td>
+                                <td>
+                                    {% if reservation.ticket.is_used %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Utilisé
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>Non utilisé
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Scanné à:</strong></td>
+                                <td>{{ reservation.ticket.scanned_at|date:"d/m/Y H:i"|default:"Non scanné" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Actions:</strong></td>
+                                <td>
+                                    {% if reservation.status == 'confirmed' and reservation.is_paid %}
+                                        <a href="{% url 'reservations:download_ticket' reservation.id %}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-download me-1"></i>Télécharger
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Actions rapides 
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    
+                    Actions Rapides
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group">
+                    
+                    {% if reservation.status == 'confirmed' and reservation.is_paid %}
+                        <a href="{% url 'reservations:download_ticket' reservation.id %}" class="btn btn-success">
+                            <i class="fas fa-download me-1"></i>Télécharger Ticket
+                        </a>
+                    {% endif %}
+                    {% if reservation.status == 'pending' %}
+                        <a href="#" class="btn btn-info" onclick="confirmReservation({{ reservation.pk }})">
+                            <i class="fas fa-check me-1"></i>Confirmer
+                        </a>
+                        <a href="#" class="btn btn-danger" onclick="rejectReservation({{ reservation.pk }})">
+                            <i class="fas fa-times me-1"></i>Rejeter
+                        </a>
+                    {% endif %}
+                    {% if reservation.status == 'confirmed' and not reservation.is_paid %}
+                        <a href="{% url 'reservations:payment_checkout' reservation.pk %}" class="btn btn-primary">
+                            <i class="fas fa-credit-card me-1"></i>Payer
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>-->
+
+<!-- Scripts pour les actions -->
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    if (container) {
+        container.insertBefore(notification, container.firstChild);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+}
+
+function confirmReservation(reservationId) {
+    if (confirm('Êtes-vous sûr de vouloir confirmer cette réservation ?')) {
+        fetch(`/reservations/${reservationId}/confirm/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Réservation confirmée avec succès', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('Erreur: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showNotification('Erreur de connexion: ' + error, 'danger');
+        });
+    }
+}
+
+function rejectReservation(reservationId) {
+    if (confirm('Êtes-vous sûr de vouloir rejeter cette réservation ?')) {
+        fetch(`/reservations/${reservationId}/reject/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Réservation rejetée avec succès', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('Erreur: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showNotification('Erreur de connexion: ' + error, 'danger');
+        });
+    }
+}
+</script>
+
+{% endblock %}

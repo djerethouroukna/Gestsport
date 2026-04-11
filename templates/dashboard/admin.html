@@ -1,0 +1,377 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Admin - GestSport{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">
+                <i class="fas fa-chart-line me-2"></i>
+            </h2>
+        </div>
+    </div>
+    
+    <!-- KPIs -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card primary">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">RÉSERVATIONS</div>
+                        <div class="stat-value">{{ total_reservations }}</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up me-1"></i>40.9%
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                </div>
+                <canvas id="reservationsChart" height="60"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">EN ATTENTE</div>
+                        <div class="stat-value">{{ pending_reservations }}</div>
+                        <div class="stat-change negative">
+                            <i class="fas fa-arrow-down me-1"></i>-12.4%
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <canvas id="pendingChart" height="60"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">TERRAINS</div>
+                        <div class="stat-value">{{ total_terrains }}</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up me-1"></i>15.3%
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-futbol"></i>
+                    </div>
+                </div>
+                <canvas id="terrainsChart" height="60"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-title">UTILISATEURS</div>
+                        <div class="stat-value">{{ total_users }}</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up me-1"></i>22.8%
+                        </div>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <canvas id="usersChart" height="60"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gestion utilisateurs (admin) -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Gestion des Utilisateurs</h5>
+                    <div>
+                        <a href="{% url 'users:user_list' %}" class="btn btn-sm btn-primary me-2">Gérer les utilisateurs</a>
+                        <a href="{% url 'users:register' %}" class="btn btn-sm btn-outline-success">Créer un utilisateur</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-md-4">
+                            <h6 class="mb-1">Administrateurs</h6>
+                            <h3 class="mb-0">{{ admin_count }}</h3>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="mb-1">Entraîneurs</h6>
+                            <h3 class="mb-0">{{ coach_count }}</h3>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="mb-1">Joueurs</h6>
+                            <h3 class="mb-0">{{ player_count }}</h3>
+                        </div>
+                    </div>
+                    <hr>
+                    <div>
+                        <h6 class="mb-3">Nouveaux inscrits</h6>
+                        <div class="list-group list-group-flush small">
+                            {% for u in recent_users %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ u.get_full_name }}</strong><br>
+                                    <small class="text-muted">{{ u.email }}</small>
+                                </div>
+                                <div><span class="badge bg-secondary">{{ u.get_role_display }}</span></div>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-muted">Aucun nouvel utilisateur</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gestion terrains (admin) -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Gestion des Terrains</h5>
+                    <div>
+                        <a href="{% url 'terrains:terrain_list' %}" class="btn btn-sm btn-primary me-2">Gérer les terrains</a>
+                        <a href="{% url 'terrains:terrain_create' %}" class="btn btn-sm btn-outline-success">Ajouter un terrain</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-md-4">
+                            <h6 class="mb-1">Disponibles</h6>
+                            <h3 class="mb-0">{{ available_terrains }}</h3>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="mb-1">En maintenance</h6>
+                            <h3 class="mb-0">{{ maintenance_terrains }}</h3>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="mb-1">Fermés</h6>
+                            <h3 class="mb-0">{{ closed_terrains }}</h3>
+                        </div>
+                    </div>
+                    <hr>
+                    <div>
+                        <h6 class="mb-3">Terrains récents</h6>
+                        <div class="list-group list-group-flush small">
+                            {% for t in recent_terrains %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ t.name }}</strong><br>
+                                    <small class="text-muted">{{ t.get_terrain_type_display }} — {{ t.created_at|date:"d/m/Y" }}</small>
+                                </div>
+                                <div class="d-flex gap-2 align-items-center flex-wrap">
+                                    <a href="{% url 'terrains:terrain_detail' t.id %}" class="btn btn-outline-primary btn-sm" aria-label="Voir {{ t.name }}">Voir</a>
+                                    <a href="{% url 'terrains:terrain_update' t.id %}" class="btn btn-warning btn-sm" aria-label="Modifier {{ t.name }}">Modifier</a>
+                                    <a href="{% url 'terrains:terrain_availability' t.id %}" class="btn btn-outline-info btn-sm" aria-label="Disponibilité {{ t.name }}">Disponibilité</a>
+                                    <button type="button" class="btn btn-danger btn-sm btn-delete-terrain" data-id="{{ t.id }}" data-name="{{ t.name|escapejs }}" aria-label="Supprimer {{ t.name }}">Supprimer</button>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-muted">Aucun terrain récent</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Helper: csrf
+    function getCookie(name){
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Create confirmation modal once
+    let confirmModal = null;
+    function ensureModal(){
+        if (confirmModal) return confirmModal;
+        const modalHtml = `
+        <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p id="confirmDeleteMessage"></p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Supprimer</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+        return confirmModal;
+    }
+
+    document.querySelectorAll('.btn-delete-terrain').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const id = this.dataset.id;
+            const name = this.dataset.name || 'ce terrain';
+            const modal = ensureModal();
+            document.getElementById('confirmDeleteMessage').textContent = `Confirmer la suppression de "${name}" ? Cette action est irréversible.`;
+
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            // remove previous handlers
+            const newConfirm = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+            newConfirm.addEventListener('click', async function(){
+                const url = '{% url "terrains:terrain_delete" 0 %}'.replace('0', id);
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrftoken },
+                        credentials: 'same-origin'
+                    });
+                    if (res.ok) {
+                        showToast('Terrain supprimé avec succès', 'success');
+                        // remove the list-group-item
+                        const item = btn.closest('.list-group-item');
+                        if (item) item.remove();
+                        modal.hide();
+                    } else {
+                        showToast('Erreur lors de la suppression', 'danger');
+                    }
+                } catch (e) {
+                    showToast('Erreur réseau lors de la suppression', 'danger');
+                }
+            });
+
+            modal.show();
+        });
+    });
+});
+</script>
+    
+    <!-- Tableau réservations récentes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Réservations Récentes</h5>
+                    <a href="#" class="btn btn-sm btn-primary">Voir tout</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="fas fa-user me-2"></i>Utilisateur</th>
+                                <th><i class="fas fa-futbol me-2"></i>Terrain</th>
+                                <th><i class="fas fa-calendar me-2"></i>Date</th>
+                                <th><i class="fas fa-info-circle me-2"></i>Statut</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for res in recent_reservations %}
+                            <tr>
+                                <td><strong>{{ res.user.get_full_name }}</strong></td>
+                                <td>{{ res.terrain.name }}</td>
+                                <td>{{ res.start_time|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <span class="badge bg-{% if res.status == 'pending' %}warning{% elif res.status == 'confirmed' %}success{% else %}danger{% endif %}">
+                                        {{ res.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'reservations:reservation_detail' res.id %}" class="btn btn-sm btn-info" title="Voir">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'reservations:reservation_edit' res.id %}" class="btn btn-sm btn-warning" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if res.status == 'pending' %}
+                                    <button type="button" class="btn btn-sm btn-success btn-confirm-reservation" data-id="{{ res.id }}" title="Confirmer">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger btn-reject-reservation" data-id="{{ res.id }}" title="Annuler">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                    Aucune réservation
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    function postAction(url) {
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            credentials: 'same-origin'
+        }).then(async r => ({ ok: r.ok, body: await r.json().catch(() => ({})) }));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-confirm-reservation').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                if (!confirm('Confirmer cette réservation ?')) return;
+                const url = '{% url "reservations:reservation_confirm" 0 %}'.replace('0', id);
+                postAction(url).then(({ok, body}) => {
+                    if (ok && body.success) { location.reload(); }
+                    else { alert(body.error || 'Erreur lors de la confirmation'); }
+                }).catch(() => alert('Erreur réseau lors de la confirmation'));
+            });
+        });
+
+        document.querySelectorAll('.btn-reject-reservation').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                if (!confirm('Annuler cette réservation ?')) return;
+                const url = '{% url "reservations:reservation_reject" 0 %}'.replace('0', id);
+                postAction(url).then(({ok, body}) => {
+                    if (ok && body.success) { location.reload(); }
+                    else { alert(body.error || 'Erreur lors de l\'annulation'); }
+                }).catch(() => alert('Erreur réseau lors de l\'annulation'));
+            });
+        });
+    });
+</script>
+
+{% endblock %}

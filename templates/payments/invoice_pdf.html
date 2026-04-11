@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture {{ invoice.invoice_number }} - GestSport</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .company-info {
+            margin-bottom: 30px;
+        }
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .invoice-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .invoice-info table {
+            width: 100%;
+        }
+        .invoice-info td {
+            padding: 5px;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th,
+        .items-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        .items-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .items-table .amount {
+            text-align: right;
+        }
+        .totals {
+            text-align: right;
+            margin-top: 20px;
+        }
+        .totals table {
+            width: 300px;
+            margin-left: auto;
+        }
+        .totals td {
+            padding: 8px;
+        }
+        .totals .total {
+            font-weight: bold;
+            font-size: 16px;
+            border-top: 2px solid #2c3e50;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <div class="header">
+        <h1 class="invoice-title">FACTURE</h1>
+    </div>
+
+    <!-- Informations entreprise -->
+    <div class="company-info">
+        <table>
+            <tr>
+                <td><strong>{{ company_info.name }}</strong></td>
+            </tr>
+            <tr>
+                <td>{{ company_info.address }}</td>
+            </tr>
+            <tr>
+                <td>Tél: {{ company_info.phone }}</td>
+            </tr>
+            <tr>
+                <td>Email: {{ company_info.email }}</td>
+            </tr>
+            <tr>
+                <td>SIRET: {{ company_info.siret }}</td>
+            </tr>
+            <tr>
+                <td>TVA: {{ company_info.tva_number }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Informations facture -->
+    <div class="invoice-info">
+        <table>
+            <tr>
+                <td><strong>Numéro de facture:</strong></td>
+                <td>{{ invoice.invoice_number }}</td>
+            </tr>
+            <tr>
+                <td><strong>Date de facture:</strong></td>
+                <td>{{ invoice.invoice_date|date:"d/m/Y" }}</td>
+            </tr>
+            <tr>
+                <td><strong>Date de paiement:</strong></td>
+                <td>{{ invoice.paid_date|date:"d/m/Y"|default:"" }}</td>
+            </tr>
+            <tr>
+                <td><strong>Client:</strong></td>
+                <td>{{ invoice.user.get_full_name|default:invoice.user.email }}</td>
+            </tr>
+            <tr>
+                <td><strong>Email client:</strong></td>
+                <td>{{ invoice.user.email }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Détails réservation -->
+    <h3>Détails de la réservation</h3>
+    <table class="items-table">
+        <tr>
+            <th>Terrain</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Heure</th>
+            <th>Durée</th>
+        </tr>
+        <tr>
+            <td>{{ invoice.reservation.terrain.name }}</td>
+            <td>{{ invoice.reservation.terrain.terrain_type }}</td>
+            <td>{{ invoice.reservation.start_time|date:"d/m/Y" }}</td>
+            <td>{{ invoice.reservation.start_time|date:"H:i" }} - {{ invoice.reservation.end_time|date:"H:i" }}</td>
+            <td>{{ invoice.reservation.duration }} heures</td>
+        </tr>
+    </table>
+
+    <!-- Détails financiers -->
+    <h3>Détails financiers</h3>
+    <table class="items-table">
+        <tr>
+            <th>Description</th>
+            <th>Quantité</th>
+            <th>Prix unitaire HT</th>
+            <th>Total HT</th>
+        </tr>
+        <tr>
+            <td>Location {{ invoice.reservation.terrain.name }}</td>
+            <td>1</td>
+            <td class="amount">{{ invoice.amount_ht|floatformat:2 }} €</td>
+            <td class="amount">{{ invoice.amount_ht|floatformat:2 }} €</td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>TVA ({{ invoice.vat_rate }}%)</strong></td>
+            <td class="amount">{{ invoice.vat_amount|floatformat:2 }} €</td>
+        </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;"><strong>TOTAL TTC</strong></td>
+            <td class="amount" style="font-size: 16px; color: #2c3e50;"><strong>{{ invoice.amount_ttc|floatformat:2 }} €</strong></td>
+        </tr>
+    </table>
+
+    <!-- Pied de page -->
+    <div class="footer">
+        <p><strong>GestSport</strong> - {{ company_info.address }}</p>
+        <p>SIRET: {{ company_info.siret }} - TVA: {{ company_info.tva_number }}</p>
+        <p>Email: {{ company_info.email }} - Tel: {{ company_info.phone }}</p>
+        {% if invoice.paid_date %}
+        <p>Facture payée électroniquement le {{ invoice.paid_date|date:"d/m/Y" }}.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+/* Style global pour progress-card - Appliqué à tous les templates */
+.progress-card {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: var(--card-shadow) !important;
+}
+
+/* Forcer les bordures à zéro pour tous les éléments de carte */
+.card {
+    border-radius: 0 !important;
+}
+
+/* S'assurer que toutes les cartes n'ont pas de bordures blanches */
+.progress-card,
+.card-header,
+.card-body,
+.card-footer {
+    border: none !important;
+}

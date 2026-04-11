@@ -1,0 +1,50 @@
+{% load static %}
+<!-- Sidebar pour dashboards -->
+<div class="col-lg-4 mb-4 mb-lg-0">
+    <div class="card shadow-sm sticky-lg-top" style="top: 80px;">
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0">
+                <i class="fas fa-bars me-2"></i>Menu
+            </h6>
+        </div>
+        <div class="list-group list-group-flush">
+            {% if user.role == 'admin' %}
+                <a href="{% url 'dashboard_admin' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}">
+                    <i class="fas fa-chart-line me-2"></i>Statistiques
+                </a>
+                <a href="{% url 'terrains:terrain_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-futbol me-2"></i>Gestion Terrains
+                </a>
+                <a href="{% url 'users:user_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-users me-2"></i>Utilisateurs
+                </a>
+                <a href="{% url 'reservations:reservation_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-calendar me-2"></i>Réservations
+                </a>
+                <a href="{% url 'payments:payment-list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-credit-card me-2"></i>Paiements
+                </a>
+            {% elif user.role == 'coach' %}
+                <a href="{% url 'dashboard_coach' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard_coach' %}active{% endif %}">
+                    <i class="fas fa-home me-2"></i>
+                </a>
+                <a href="{% url 'activities:activity_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-running me-2"></i>Mes Activités
+                </a>
+            {% else %}
+                <a href="{% url 'dashboard_player' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard_player' %}active{% endif %}">
+                    <i class="fas fa-home me-2"></i>
+                </a>
+                <a href="{% url 'reservations:reservation_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-calendar me-2"></i>Mes Réservations
+                </a>
+                <a href="{% url 'activities:activity_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-running me-2"></i>Activités
+                </a>
+            {% endif %}
+            <a href="{% url 'users:profile' %}" class="list-group-item list-group-item-action">
+                <i class="fas fa-user me-2"></i>Mon Profil
+            </a>
+        </div>
+    </div>
+</div>

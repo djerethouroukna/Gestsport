@@ -1,0 +1,467 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.stats-card {
+    background: linear-gradient(135deg, #2ECC71);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-number {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.stats-label {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.filter-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.table-responsive {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.terrain-stats-table {
+    background: white;
+}
+
+.terrain-stats-table th {
+    background: linear-gradient(135deg, #2ECC71);
+    color: white;
+    border: none;
+    padding: 15px;
+}
+
+.terrain-stats-table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+}
+
+.btn-export {
+    background: linear-gradient(135deg, #2ECC71);
+    border: none;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.btn-export:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    color: white;
+}
+
+.period-chart {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.reservation-row:hover {
+    background-color: #f8f9fa;
+}
+
+.badge-status {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .stats-card {
+        margin-bottom: 15px;
+    }
+    
+    .filter-section {
+        padding: 15px;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+.filter-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+        border: 1px solid #edf2f7;
+    }
+    .filter-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #718096;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #2ECC71;
+        box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+    }
+    .btn-filter {
+        background-color: #2ECC71;
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .btn-filter:hover {
+        background-color: #27AE60;
+        color: white;
+        transform: translateY(-1px);
+    }
+    .btn-reset {
+        background-color: #f7fafc;
+        border: 1px solid #e2e8f0;
+        color: #4a5568;
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+    }
+    .btn-reset:hover {
+        background-color: #edf2f7;
+        color: #2d3748;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                
+                {{ title }}
+            </h1>
+        </div>
+    </div>
+
+    <div class="filter-card">
+    <form method="GET" class="row g-3 align-items-end">
+        <div class="col-lg-3 col-md-6">
+            <label for="terrain" class="filter-label">
+                 Terrain
+            </label>
+            <select name="terrain" id="terrain" class="form-select">
+                <option value="">Tous les terrains</option>
+                {% for terrain in terrains %}
+                    <option value="{{ terrain.id }}" {% if selected_terrain == terrain.id|stringformat:"s" %}selected{% endif %}>
+                        {{ terrain.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label for="period" class="filter-label">
+                 Période
+            </label>
+            <select name="period" id="period" class="form-select">
+                <option value="week" {% if selected_period == 'week' %}selected{% endif %}>Semaine</option>
+                <option value="month" {% if selected_period == 'month' %}selected{% endif %}>Mois</option>
+                <option value="year" {% if selected_period == 'year' %}selected{% endif %}>Année</option>
+            </select>
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label for="start_date" class="filter-label">Du</label>
+            <input type="date" name="start_date" id="start_date" class="form-control" 
+                   value="{% if start_date %}{{ start_date|date:'Y-m-d' }}{% endif %}">
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label for="end_date" class="filter-label">Au</label>
+            <input type="date" name="end_date" id="end_date" class="form-control"
+                   value="{% if end_date %}{{ end_date|date:'Y-m-d' }}{% endif %}">
+        </div>
+
+        <div class="col-lg-3 col-md-12">
+            <div class="d-flex gap-2 justify-content-lg-end">
+                <button type="submit" class="btn btn-filter w-100 w-lg-auto",bold>
+                    </i>Filtrer
+                </button>
+                <a href="{% url 'reports:rapports' %}" class="btn btn-reset">
+                    <i class="fas fa-undo"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+    <!-- Statistiques principales -->
+    <div class="row mb-1">
+        <div class="col-md-6">
+            <div class="stats-card">
+                <div class="stats-number">{{ total_reservations }}</div>
+                <div class="stats-label">
+                    
+                    Total des réservations
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stats-card">
+                <div class="stats-number">{{ total_revenue|floatformat:2 }} F CFA</div>
+                <div class="stats-label">   
+                    Revenu total
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export PDF -->
+    <div class="row mb-4">
+        <div class="col-12 text-end">
+            <a href="{% url 'reports:export_pdf' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" 
+               class="btn btn-export" target="_blank">
+                
+                Exporter en PDF
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-secondary ms-2">
+              
+                Imprimer
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistiques par terrain -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="table-responsive">
+                <table class="table table-hover terrain-stats-table">
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Terrain</th>
+                            <th>Nb Réserv</th>
+                            <th>Mnt Total</th>
+                            <th>Moy/Réserv</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in terrain_stats %}
+                            <tr>
+                                <td><strong>{{ forloop.counter }}</strong></td>
+                                <td>
+                                    <strong>{{ stat.terrain.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ stat.terrain.get_terrain_type_display }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ stat.reservations_count }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ stat.total_amount|floatformat:2 }} F CFA</strong>
+                                </td>
+                                <td>{{ stat.average_amount|floatformat:2 }} F CFA</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Aucune réservation trouvée pour cette période
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <th colspan="2">TOTAL</th>
+                            <th>{{ total_reservations }}</th>
+                            <th>{{ total_revenue|floatformat:2 }} F CFA</th>
+                            <th>
+                                {% if total_reservations > 0 %}
+                                    Moy: {% widthratio total_revenue 1 total_reservations %} F CFA/réserv
+                                {% else %}
+                                    0.00 FCFA/réserv
+                                {% endif %}
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques par période -->
+    {% if period_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="period-chart">
+                <h5 class="mb-3">
+                    
+                    Activités de la {% if selected_period == 'week' %}jour{% elif selected_period == 'month' %}semaine{% else %}mois{% endif %}
+                </h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Période</th>
+                                <th>Réservations</th>
+                                <th>Revenu</th>
+                                <th>Progression</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in period_stats %}
+                                <tr>
+                                    <td>{{ stat.period }}</td>
+                                    <td>{{ stat.reservations_count }}</td>
+                                    <td>{{ stat.total_amount|floatformat:2 }} F CFA</td>
+                                    <td>
+                                        {% if stat.percentage_change != 0 %}
+                                            {% if stat.percentage_change > 0 %}
+                                                <span class="text-success">
+                                                    
+                                                    +{{ stat.percentage_change|floatformat:2 }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-danger">
+                                                    
+                                                    {{ stat.percentage_change|floatformat:2 }}%
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">
+                                                
+                                                0.00%
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Détail des réservations -->
+    <div class="row">
+        <div class="col-12">
+            <h5 class="mb-3">
+                
+                Détail des réservations
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark" style="background-color: #2ECC71 !important; border-color: #2ECC71 !important;">
+                        <tr style="background-color: #2ECC71 !important;">
+                            <th style="background-color: #2ECC71 !important; border-color: #2ECC71 !important;">Date</th>
+                            <th style="background-color: #2ECC71 !important; border-color: #2ECC71 !important;">Terrain</th>
+                            <th style="background-color: #2ECC71 !important; border-color: #2ECC71 !important;">Client</th>
+                            <th style="background-color: #2ECC71 !important; border-color: #2ECC71 !important;">Heure début</th>
+                            <th style="background-color: #2ECC71 !important; border-color: #2ECC71 !important;">Heure fin</th>
+                            <th style="background-color: #2ECC71 !important; border-color: #2ECC71 !important;">Montant</th>
+                            <th style="background-color: #2ECC71 !important; border-color: #2ECC71 !important;">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in detailed_reservations %}
+                            <tr class="reservation-row">
+                                <td>{{ reservation.start_time|date:"d/m/Y" }}</td>
+                                <td>
+                                    <strong>{{ reservation.terrain.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ reservation.terrain.get_terrain_type_display }}</small>
+                                </td>
+                                <td>
+                                    {{ reservation.user.get_full_name|default:reservation.user.username }}
+                                </td>
+                                <td>{{ reservation.start_time|date:"H:i" }}</td>
+                                <td>{{ reservation.end_time|date:"H:i" }}</td>
+                                <td>
+                                    <strong>{{ reservation.total_amount|floatformat:2 }} F CFA</strong>
+                                </td>
+                                <td>
+                                    <span class="badge badge-status 
+                                        {% if reservation.status == 'confirmed' %}bg-success
+                                        {% elif reservation.status == 'completed' %}bg-info
+                                        {% elif reservation.status == 'pending' %}bg-warning
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ reservation.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Aucune réservation trouvée pour ces informations
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form on period change
+    document.getElementById('period').addEventListener('change', function() {
+        this.form.submit();
+    });
+    
+    // Auto-submit form on terrain change
+    document.getElementById('terrain').addEventListener('change', function() {
+        this.form.submit();
+    });
+    
+    // Date range validation
+    document.getElementById('start_date').addEventListener('change', function() {
+        const endDate = document.getElementById('end_date');
+        if (this.value && endDate.value && this.value > endDate.value) {
+            endDate.value = this.value;
+        }
+    });
+    
+    document.getElementById('end_date').addEventListener('change', function() {
+        const startDate = document.getElementById('start_date');
+        if (this.value && startDate.value && this.value < startDate.value) {
+            startDate.value = this.value;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+.audit-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.stat-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #007cba;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007cba;
+    margin: 5px 0;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.recent-activity {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.recent-activity h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-time {
+    color: #666;
+    font-size: 11px;
+    min-width: 50px;
+}
+
+.activity-user {
+    font-weight: bold;
+    margin: 0 10px;
+    min-width: 100px;
+    font-size: 12px;
+}
+
+.activity-action {
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    margin: 0 5px;
+}
+
+.activity-details {
+    color: #666;
+    font-size: 12px;
+}
+
+.badge-create { background: #28a745; color: white; }
+.badge-update { background: #17a2b8; color: white; }
+.badge-delete { background: #dc3545; color: white; }
+.badge-login { background: #007bff; color: white; }
+.badge-logout { background: #6c757d; color: white; }
+.badge-failed { background: #dc3545; color: white; }
+.badge-view { background: #e9ecef; color: #333; }
+.badge-export { background: #ffc107; color: #333; }
+
+.alert-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.quick-filters {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+    flex-wrap: wrap;
+}
+
+.quick-filters a {
+    padding: 5px 12px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    text-decoration: none;
+    font-size: 12px;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.quick-filters a:hover {
+    background: #007cba;
+    color: white;
+    border-color: #007cba;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <!-- Statistiques -->
+    <div class="audit-stats">
+        <div class="stat-item">
+            <div class="stat-label">Total Logs</div>
+            <div class="stat-number">{{ total_logs|default:0 }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Aujourd'hui</div>
+            <div class="stat-number">{{ today_logs|default:0 }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Utilisateurs Actifs</div>
+            <div class="stat-number">{{ active_users|default:0 }}</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Actions Récentes</div>
+            <div class="stat-number">{{ recent_logs|length }}</div>
+        </div>
+    </div>
+
+    <!-- Alertes -->
+    {% if failed_logins %}
+    <div class="alert-warning">
+        <strong>⚠️ Attention:</strong> {{ failed_logins|length }} tentative(s) de connexion échouée(s) récente(s)
+    </div>
+    {% endif %}
+
+    <!-- Filtres rapides -->
+    <div class="quick-filters">
+        <a href="?action=CREATE">✅ Créations</a>
+        <a href="?action=UPDATE">📝 Modifications</a>
+        <a href="?action=DELETE">🗑️ Suppressions</a>
+        <a href="?action=LOGIN">🔑 Connexions</a>
+        <a href="?action=FAILED_LOGIN">❌ Échecs</a>
+        <a href="?timestamp__today=1">📅 Aujourd'hui</a>
+        <a href="?timestamp__week=1">📆 Cette semaine</a>
+    </div>
+
+    <!-- Activité récente -->
+    <div class="recent-activity">
+        <h3>📋 Activité Récente</h3>
+        {% for log in recent_logs %}
+        <div class="activity-item">
+            <div class="activity-time">{{ log.timestamp|time:"H:i" }}</div>
+            <div class="activity-user">
+                {% if log.user %}
+                    {{ log.user.email|default:log.user.username|truncatechars:15 }}
+                {% else %}
+                    Système
+                {% endif %}
+            </div>
+            <span class="activity-action badge-{{ log.action|lower }}">
+                {{ log.get_action_display }}
+            </span>
+            <div class="activity-details">
+                {{ log.model_name }}: {{ log.object_repr|truncatechars:30 }}
+            </div>
+        </div>
+        {% empty %}
+        <p style="text-align: center; color: #666; padding: 20px;">
+            Aucune activité récente
+        </p>
+        {% endfor %}
+    </div>
+
+    <!-- Tableau principal -->
+    {{ block.super }}
+</div>
+{% endblock %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    <li>
+        <a href="/audit/dashboard/" class="addlink" target="_blank">
+            📊 Dashboard Audit
+        </a>
+    </li>
+{% endblock %}

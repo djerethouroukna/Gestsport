@@ -1,0 +1,458 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}Mon Profil - GestSport{% endblock %}
+
+{% block breadcrumb %}Mon Profil{% endblock %}
+
+{% block content %}
+    <!-- Profile Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="progress-card" style="background: linear-gradient(135deg,#2ECC71); color: white; border: none;">
+                <div class="row align-items-center">
+                    <div class="col-md-2 text-center">
+                        <div class="user-avatar" style="width: 80px; height: 80px; font-size: 2rem; margin: 0 auto;">
+                            {{ user.get_full_name.0|default:user.email.0|upper }}
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <h2 class="mb-2">{{ user.get_full_name|default:user.email }}</h2>
+                        <p class="mb-2 opacity-75">{{ user.email }}</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge bg-light text-dark">{{ user.get_role_display }}</span>
+                            <span class="badge bg-{% if user.is_active %}success{% else %}danger{% endif %}">
+                                {% if user.is_active %}Actif{% else %}Inactif{% endif %}
+                            </span>
+                            <span class="badge bg-info">Membre depuis {{ user.date_joined|date:"F Y" }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-md-end">
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-light">
+                            <i class="fas fa-edit me-2"></i>Modifier le Profil
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEBUG: Variables disponibles - reservations_count: {{ reservations_count|default:"NON_DEFINI" }}, activities_count: {{ activities_count|default:"NON_DEFINI" }}, total_spent: {{ total_spent|default:"NON_DEFINI" }}, user_points: {{ user_points|default:"NON_DEFINI" }}, reservation_performance: {{ reservation_performance|default:"NON_DEFINI" }} -->
+    
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    <h2>{{ reservations_count|default:0 }}</h2>
+                    <p><i class="fas fa-calendar-check me-2"></i>RÉSERVATIONS</p>
+                </div>
+                <div class="card-bottom">
+                    <p><i class="fas fa-arrow-{% if reservation_performance > 0 %}up{% else %}down{% endif %} me-1"></i>{% if reservation_performance > 0 %}+{% endif %}{{ reservation_performance|default:0 }}% performance</p>
+                    <canvas id="reservationsChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    <h2>{{ activities_count|default:0 }}</h2>
+                    <p><i class="fas fa-running me-2"></i>ACTIVITÉS</p>
+                </div>
+                <div class="card-bottom">
+                    <p><i class="fas fa-arrow-up me-1"></i>+{{ activities_count|default:0 }} activités</p>
+                    <canvas id="activitiesChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    <h2>{{ total_spent|floatformat:0|default:0 }} F CFA</h2>
+                    <p><i class="fas fa-credit-card me-2"></i>DÉPENSES</p>
+                </div>
+                <div class="card-bottom">
+                    <p><i class="fas fa-chart-line me-1"></i>Total dépensé</p>
+                    <canvas id="spendingChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    <h2>{{ user_points|default:0 }}</h2>
+                    <p><i class="fas fa-trophy me-2"></i>POINTS</p>
+                </div>
+                <div class="card-bottom">
+                    <p><i class="fas fa-star me-1"></i>{{ user_points|default:0 }} points fidélité</p>
+                    <canvas id="pointsChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Personal Information -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="progress-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="mb-0">
+                        <i class="fas fa-id-card me-2"></i>
+                        Informations Personnelles
+                    </h6>
+                    <a href="{% url 'users:profile_edit' %}" class="btn btn-sm btn-info">
+                        <i class="fas fa-edit me-2"></i>Modifier
+                    </a>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Prénom</label>
+                        <p class="mb-0 fw-semibold">{{ user.first_name|default:"Non renseigné" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Nom</label>
+                        <p class="mb-0 fw-semibold">{{ user.last_name|default:"Non renseigné" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Email</label>
+                        <p class="mb-0 fw-semibold">{{ user.email }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Téléphone</label>
+                        <p class="mb-0 fw-semibold">{{ user.phone|default:"Non renseigné" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Date de Naissance</label>
+                        <p class="mb-0 fw-semibold">{{ user.date_of_birth|date:"d/m/Y"|default:"Non renseigné" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Ville</label>
+                        <p class="mb-0 fw-semibold">{{ user.city|default:"Non renseigné" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Address Information -->
+            <div class="progress-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        Adresse
+                    </h6>
+                    <a href="{% url 'users:profile_edit' %}" class="btn btn-sm btn-info">
+                        <i class="fas fa-edit me-2"></i>Modifier
+                    </a>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Adresse</label>
+                        <p class="mb-0 fw-semibold">{{ user.address|default:"Non renseigné" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Code Postal</label>
+                        <p class="mb-0 fw-semibold">{{ user.postal_code|default:"Non renseigné" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="small text-muted">Pays</label>
+                        <p class="mb-0 fw-semibold">{{ user.country|default:"Non renseigné" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="progress-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Activité Récente
+                    </h6>
+                    <a href="{% url 'reservations:reservation_list' %}" class="btn btn-sm btn-outline-info">
+                        Voir tout
+                    </a>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in recent_reservations %}
+                            <tr>
+                                <td><i class="fas fa-calendar text-primary me-2"></i>Réservation</td>
+                                <td>{{ reservation.terrain.name|default:"Terrain non spécifié" }}</td>
+                                <td>{{ reservation.start_time|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if reservation.status == 'confirmed' %}
+                                        <span class="badge bg-success">Confirmée</span>
+                                    {% elif reservation.status == 'completed' %}
+                                        <span class="badge bg-info">Terminée</span>
+                                    {% elif reservation.status == 'cancelled' %}
+                                        <span class="badge bg-danger">Annulée</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ reservation.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>Aucune activité récente
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <!-- Afficher les activités si l'utilisateur est coach -->
+                            {% if user.is_coach %}
+                                {% for activity in recent_activities %}
+                                <tr>
+                                    <td><i class="fas fa-running text-success me-2"></i>Activité</td>
+                                    <td>{{ activity.title }}</td>
+                                    <td>{{ activity.start_time|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if activity.status == 'completed' %}
+                                            <span class="badge bg-info">Terminée</span>
+                                        {% elif activity.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">À venir</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-xl-4 col-lg-5">
+            <!-- Quick Actions -->
+            <div class="progress-card mb-4">
+                <h6 class="mb-4">Actions Rapides</h6>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'users:profile_edit' %}" class="btn btn-info">
+                        <i class="fas fa-edit me-2"></i>
+                        Modifier le profil
+                    </a>
+                    <a href="{% url 'users:settings' %}" class="btn btn-info">
+                        <i class="fas fa-cog me-2"></i>
+                        Paramètres
+                    </a>
+                    <a href="{% url 'reservations:reservation_create' %}" class="btn btn-info">
+                        <i class="fas fa-plus me-2"></i>
+                        Nouvelle réservation
+                    </a>
+                    <a href="{% url 'terrains:terrain_list' %}" class="btn btn-info">
+                        <i class="fas fa-search me-2"></i>
+                        Voir les terrains
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Membership Status -->
+            <div class="progress-card mb-4">
+                <h6 class="mb-4">Statut Membre</h6>
+                
+                <div class="text-center mb-3">
+                    <div class="social-icon facebook mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h5>Membre Premium</h5>
+                    <p class="text-muted small">Valide jusqu'au 31/12/2024</p>
+                </div>
+                
+                <div class="d-grid">
+                    <button class="btn btn-outline-info">
+                        <i class="fas fa-sync me-2"></i>
+                        Renouveler
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Preferences -->
+            <div class="progress-card">
+                <h6 class="mb-4">Préférences</h6>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                            <label class="form-check-label" for="emailNotifications">
+                                Notifications email
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="smsNotifications">
+                            <label class="form-check-label" for="smsNotifications">
+                                Notifications SMS
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="publicProfile" checked>
+                            <label class="form-check-label" for="publicProfile">
+                                Profil public
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="language" class="small text-muted">Langue</label>
+                    <select class="form-select form-select-sm" id="language">
+                        <option value="fr" selected>Français</option>
+                        <option value="en">English</option>
+                        <option value="ar">العربية</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Mini Charts for Stats
+    function createMiniChart(canvasId, data, color) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['', '', '', '', '', '', ''],
+                datasets: [{
+                    data: data,
+                    borderColor: color,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                }
+            }
+        });
+    }
+
+    // Initialize mini charts
+    createMiniChart('reservationsChart', [8, 10, 9, 12, 11, 14, 12], '#4e73df');
+    createMiniChart('activitiesChart', [3, 4, 5, 4, 6, 5, 6], '#1cc88a');
+    createMiniChart('spendingChart', [150, 120, 180, 140, 160, 130, 145], '#36b9cc');
+    createMiniChart('pointsChart', [200, 210, 220, 230, 240, 250, 250], '#f6c23e');
+    </script>
+{% endblock %}

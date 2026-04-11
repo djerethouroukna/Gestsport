@@ -1,0 +1,356 @@
+/* Thème Sombre - Dark Theme */
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --success-color: #2ECC71;  /* Changé en vert émeraude */
+    --info-color: #36b9cc;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+    
+    --bg-primary: #1a1d23;
+    --bg-secondary: #22262e;
+    --bg-tertiary: #2a2f38;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #b8bcc8;
+    --text-muted: #6c757d;
+    
+    --border-color: #3a3f47;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    
+    --card-bg: #22262e;
+    --card-border: #3a3f47;
+    --card-shadow: 0 0.15rem 1.75rem 0 rgba(0, 0, 0, 0.3);
+    
+    --navbar-bg: #1a1d23;
+    --navbar-text: #b8bcc8;
+    --navbar-border: #3a3f47;
+    
+    --sidebar-bg: #2a2f38;
+    --sidebar-text: #ffffff;
+    --sidebar-hover: #3a3f47;
+    
+    --table-header-bg: #2a2f38;
+    --table-border: #3a3f47;
+    
+    --input-bg: #2a2f38;
+    --input-border: #3a3f47;
+    --input-focus: #667eea;
+    
+    --btn-primary-bg: #4e73df;
+    --btn-primary-hover: #667eea;
+    --btn-success-bg: #2ECC71;  /* Changé en vert émeraude */
+    --btn-success-hover: #27ae60;  /* Vert plus foncé au hover */
+    --btn-danger-bg: #e74a3b;
+    --btn-danger-hover: #f1556c;
+}
+
+/* Mode Sombre spécifique */
+body {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* CoreUI spécifique pour mode sombre */
+.theme-dark .sidebar {
+    background-color: #1a1d23 !important;
+    border-right: 1px solid #3a3f47 !important;
+}
+
+.theme-dark .sidebar .nav-link {
+    color: #b8bcc8 !important;
+}
+
+.theme-dark .sidebar .nav-link:hover,
+.theme-dark .sidebar .nav-link.active {
+    background-color: #3a3f47 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .header {
+    background-color: #1a1d23 !important;
+    border-bottom: 1px solid #3a3f47 !important;
+}
+
+.theme-dark .content-wrapper {
+    background-color: #22262e !important;
+}
+
+.theme-dark .card {
+    background-color: #2a2f38 !important;
+    border: 1px solid #3a3f47 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .card-header {
+    background-color: #3a3f47 !important;
+    border-bottom: 1px solid #4a4f57 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .card-title,
+.theme-dark .card-text {
+    color: #ffffff !important;
+}
+
+.theme-dark .table {
+    background-color: #2a2f38 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .table thead th {
+    background-color: #3a3f47 !important;
+    border-color: #4a4f57 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .table td,
+.theme-dark .table th {
+    border-color: #3a3f47 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .btn {
+    border-color: transparent !important;
+}
+
+.theme-dark .form-control,
+.theme-dark .form-select {
+    background-color: #3a3f47 !important;
+    border: 1px solid #4a4f57 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .form-control:focus,
+.theme-dark .form-select:focus {
+    background-color: #3a3f47 !important;
+    border-color: #667eea !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+}
+
+.theme-dark .form-label {
+    color: #b8bcc8 !important;
+}
+
+.theme-dark .modal-content {
+    background-color: #2a2f38 !important;
+    border: 1px solid #3a3f47 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .modal-header {
+    background-color: #3a3f47 !important;
+    border-bottom: 1px solid #4a4f57 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .modal-title {
+    color: #ffffff !important;
+}
+
+.theme-dark .alert {
+    background-color: #3a3f47 !important;
+    border: 1px solid #4a4f57 !important;
+    color: #ffffff !important;
+}
+
+.theme-dark .badge {
+    color: #ffffff !important;
+}
+
+.theme-dark .progress {
+    background-color: #3a3f47 !important;
+}
+
+.theme-dark .progress-bar {
+    background-color: #667eea !important;
+}
+
+/* Cartes en mode sombre */
+.progress-card {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    box-shadow: var(--card-shadow) !important;
+}
+
+.progress-card h1,
+.progress-card h2,
+.progress-card h3,
+.progress-card h4,
+.progress-card h5,
+.progress-card h6,
+.progress-card .h1,
+.progress-card .h2,
+.progress-card .h3,
+.progress-card .h4,
+.progress-card .h5,
+.progress-card .h6 {
+    color: var(--text-primary) !important;
+}
+
+.progress-card .text-muted,
+.progress-card .small,
+.progress-card .opacity-75 {
+    color: var(--text-secondary) !important;
+}
+
+/* Navbar en mode sombre */
+.navbar,
+.navbar-expand-lg,
+.navbar-light {
+    background-color: var(--navbar-bg) !important;
+    border-bottom: 1px solid var(--navbar-border) !important;
+}
+
+.navbar-brand,
+.navbar-nav .nav-link {
+    color: var(--navbar-text) !important;
+}
+
+/* Sidebar en mode sombre */
+.sidebar,
+.sidebar .nav-link {
+    background-color: var(--sidebar-bg) !important;
+    color: var(--sidebar-text) !important;
+}
+
+.sidebar .nav-link:hover {
+    background-color: var(--sidebar-hover) !important;
+}
+
+/* Tables en mode sombre */
+.table {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+.table thead th {
+    background-color: var(--table-header-bg) !important;
+    border-bottom: 1px solid var(--table-border) !important;
+    color: var(--text-primary) !important;
+}
+
+.table td,
+.table th {
+    border-color: var(--table-border) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Formulaires en mode sombre */
+.form-control,
+.form-select {
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--input-border) !important;
+    color: var(--text-primary) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-focus) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+}
+
+.form-label {
+    color: var(--text-primary) !important;
+}
+
+/* Boutons en mode sombre */
+.btn-primary {
+    background-color: var(--btn-primary-bg) !important;
+    border-color: var(--btn-primary-bg) !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--btn-primary-hover) !important;
+    border-color: var(--btn-primary-hover) !important;
+}
+
+.btn-success {
+    background-color: var(--btn-success-bg) !important;
+    border-color: var(--btn-success-bg) !important;
+}
+
+.btn-success:hover {
+    background-color: var(--btn-success-hover) !important;
+    border-color: var(--btn-success-hover) !important;
+}
+
+.btn-danger {
+    background-color: var(--btn-danger-bg) !important;
+    border-color: var(--btn-danger-bg) !important;
+}
+
+.btn-danger:hover {
+    background-color: var(--btn-danger-hover) !important;
+    border-color: var(--btn-danger-hover) !important;
+}
+
+/* Modals en mode sombre */
+.modal-content {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    color: var(--text-primary) !important;
+}
+
+.modal-header {
+    background-color: var(--bg-tertiary) !important;
+    border-bottom: 1px solid var(--card-border) !important;
+}
+
+.modal-title {
+    color: var(--text-primary) !important;
+}
+
+/* Alerts en mode sombre */
+.alert {
+    background-color: var(--bg-tertiary) !important;
+    border: 1px solid var(--card-border) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Scrollbar pour mode sombre */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Stat cards en mode sombre */
+.stat-card.primary,
+.stat-card.success,
+.stat-card.info,
+.stat-card.warning {
+    color: #ffffff !important;
+}
+
+.stat-card.success {
+    background: linear-gradient(135deg, #2ECC71 0%, #27ae60 100%) !important;  /* Changé en vert émeraude */
+}
+
+/* Badges en mode sombre */
+.badge {
+    color: #ffffff !important;
+}
+
+/* Progress bars en mode sombre */
+.progress {
+    background-color: var(--bg-tertiary) !important;
+}
+
+.progress-bar {
+    background-color: var(--primary-color) !important;
+}

@@ -1,0 +1,764 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Terrains - GestSport{% endblock %}
+
+{% block breadcrumb %}Terrains{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        <i class="fas fa-futbol me-3"></i>
+                        Nos Terrains Sportifs
+                    </h2>
+                    <p class="mb-0 opacity-75">Découvrez et réservez les meilleurs terrains de votre région</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    {% if user.role == 'admin' %}
+                    <a href="{% url 'terrains:terrain_create' %}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>
+                        Ajouter un terrain
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card primary">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">TOTAL TERRAINS</div>
+                    <div class="stat-value">{{ page_obj.paginator.count }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+15.2%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-futbol"></i>
+                </div>
+            </div>
+            <canvas id="totalTerrainsChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card success">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">DISPONIBLES</div>
+                    <div class="stat-value">{{ available_count|default:0 }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+8.7%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <canvas id="availableTerrainsChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card info">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">RÉSERVATIONS AUJ.</div>
+                    <div class="stat-value">{{ today_reservations|default:12 }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+23.5%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+            <canvas id="reservationsChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card warning">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">MOYENNE PRIX/H</div>
+                    <div class="stat-value">{{ avg_price|default:25 }}FCFA</div>
+                    <div class="stat-change negative">
+                        <i class="fas fa-arrow-down me-1"></i>-5.2%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+            </div>
+            <canvas id="priceChart" height="60"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Filters -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-filter me-2 text-primary"></i>
+                    Filtres de recherche
+                </h6>
+                <button class="btn btn-sm btn-outline-secondary" id="clearFilters">
+                    <i class="fas fa-times me-1"></i>Effacer
+                </button>
+            </div>
+            
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-futbol me-2 text-primary"></i>Type
+                        </label>
+                        <select class="form-select" name="type">
+                            <option value="">Tous les types</option>
+                            <option value="football" {% if request.GET.type == 'football' %}selected{% endif %}>
+                                <i class="fas fa-futbol me-1"></i>Football
+                            </option>
+                            <option value="tennis" {% if request.GET.type == 'tennis' %}selected{% endif %}>
+                                <i class="fas fa-table-tennis me-1"></i>Tennis
+                            </option>
+                            <option value="basketball" {% if request.GET.type == 'basketball' %}selected{% endif %}>
+                                <i class="fas fa-basketball-ball me-1"></i>Basketball
+                            </option>
+                            <option value="volleyball" {% if request.GET.type == 'volleyball' %}selected{% endif %}>
+                                <i class="fas fa-volleyball-ball me-1"></i>Volleyball
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-euro-sign me-2 text-success"></i>Prix Max/h
+                        </label>
+                        <input type="range" class="form-range" name="prix_max" min="0" max="100" value="{{ request.GET.prix_max|default:100 }}">
+                        <small class="text-muted">Jusqu'à <span id="prix_val">{{ request.GET.prix_max|default:100 }}</span>FCFA</small>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-star me-2 text-warning"></i>Note Minimum
+                        </label>
+                        <select class="form-select" name="rating">
+                            <option value="">Toutes les notes</option>
+                            <option value="5" {% if request.GET.rating == '5' %}selected{% endif %}>
+                                ⭐⭐⭐⭐⭐ 5 étoiles
+                            </option>
+                            <option value="4" {% if request.GET.rating == '4' %}selected{% endif %}>
+                                ⭐⭐⭐⭐ 4+ étoiles
+                            </option>
+                            <option value="3" {% if request.GET.rating == '3' %}selected{% endif %}>
+                                ⭐⭐⭐ 3+ étoiles
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-toggle-on me-2 text-info"></i>Statut
+                        </label>
+                        <select class="form-select" name="status">
+                            <option value="">Tous</option>
+                            <option value="available" {% if request.GET.status == 'available' %}selected{% endif %}>
+                                <i class="fas fa-check-circle me-1"></i>Disponibles
+                            </option>
+                            <option value="occupied" {% if request.GET.status == 'occupied' %}selected{% endif %}>
+                                <i class="fas fa-times-circle me-1"></i>Occupés
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Filtrer
+                            </button>
+                            <a href="{% url 'terrains:terrain_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-redo me-2"></i>Réinitialiser
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Terrains Grid -->
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2 text-info"></i>
+                    Liste des Terrains
+                    <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+                </h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" id="gridViewBtn">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" id="listViewBtn">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row g-4" id="terrainsGrid">
+                {% for terrain in page_obj %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="social-card hover-shadow">
+                        <!-- Image -->
+                        <div class="position-relative" style="height: 200px; overflow: hidden; border-radius: 0.5rem 0.5rem 0 0;">
+                            {% if terrain.photos.all %}
+                                {% if terrain.photos.all.0.image %}
+                                    <img src="{{ terrain.photos.all.0.image.url }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ terrain.name }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/400x300?text={{ terrain.name }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ terrain.name }}">
+                                {% endif %}
+                            {% else %}
+                                <img src="https://via.placeholder.com/400x300?text={{ terrain.name }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ terrain.name }}">
+                            {% endif %}
+                            
+                            <!-- Badges -->
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-success">
+                                    {{ terrain.get_terrain_type_display }}
+                                </span>
+                            </div>
+                            {% if terrain.status == 'available' %}
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-info">
+                                    Disponible
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-3">
+                            <h6 class="mb-2 fw-semibold">{{ terrain.name }}</h6>
+                            
+                            <!-- Rating -->
+                            <div class="mb-2 d-flex align-items-center">
+                                <div class="social-icon warning me-2" style="width: 20px; height: 20px; font-size: 0.7rem;">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="fw-bold">{{ terrain.average_rating|default:"4.5" }}/5</span>
+                                <span class="text-muted ms-2">(45 avis)</span>
+                            </div>
+                            
+                            <!-- Description -->
+                            <p class="text-muted small mb-3">{{ terrain.description|truncatewords:10 }}</p>
+                            
+                            <!-- Price and Capacity -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-success fw-bold">{{ terrain.price_per_hour }} FCFA/h</span>
+                                <span class="text-muted small">
+                                    <i class="fas fa-users me-1"></i>{{ terrain.capacity }}
+                                </span>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'terrains:terrain_detail' terrain.id %}" class="btn btn-primary btn-sm flex-fill">
+                                    <i class="fas fa-info-circle me-1"></i>Voir
+                                </a>
+                                {% if user.role == 'admin' %}
+                                <a href="{% url 'terrains:terrain_update' terrain.id %}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm btn-delete-terrain" 
+                                        data-id="{{ terrain.id }}" data-name="{{ terrain.name|escapejs }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                                {% if terrain.latitude and terrain.longitude %}
+                                <button class="btn btn-outline-info btn-sm view-on-map-btn" 
+                                        data-lat="{{ terrain.latitude }}" data-lng="{{ terrain.longitude }}" 
+                                        data-name="{{ terrain.name|escapejs }}">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <div class="social-icon primary mb-3" style="width: 80px; height: 80px; font-size: 2rem; margin: 0 auto;">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h5 class="mb-2">Aucun terrain trouvé</h5>
+                        <p class="text-muted">Essayez de modifier vos filtres de recherche</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <small>
+                            Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }} 
+                            ({{ page_obj.paginator.count }} terrains au total)
+                        </small>
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </span>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Quick Actions -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Actions Rapides</h6>
+            
+            <div class="d-grid gap-2">
+                {% if user.role == 'admin' %}
+                <a href="{% url 'terrains:terrain_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    Ajouter un terrain
+                </a>
+                {% endif %}
+                <button class="btn btn-success" id="exportBtn">
+                    <i class="fas fa-download me-2"></i>
+                    Exporter la liste
+                </button>
+                <button class="btn btn-info" id="mapViewBtn">
+                    <i class="fas fa-map me-2"></i>
+                    Vue carte
+                </button>
+                <button class="btn btn-warning" id="refreshBtn">
+                    <i class="fas fa-sync me-2"></i>
+                    Actualiser
+                </button>
+            </div>
+        </div>
+        
+        <!-- Terrain Types Distribution -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Répartition par Type</h6>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        <i class="fas fa-futbol text-primary me-1"></i>Football
+                    </div>
+                    <div class="small">{{ football_count|default:8 }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: {{ football_percentage|default:53 }}%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        <i class="fas fa-table-tennis text-success me-1"></i>Tennis
+                    </div>
+                    <div class="small">{{ tennis_count|default:4 }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: {{ tennis_percentage|default:27 }}%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        <i class="fas fa-basketball-ball text-warning me-1"></i>Basketball
+                    </div>
+                    <div class="small">{{ basketball_count|default:2 }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-warning" style="width: {{ basketball_percentage|default:13 }}%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        <i class="fas fa-volleyball-ball text-info me-1"></i>Volleyball
+                    </div>
+                    <div class="small">{{ volleyball_count|default:1 }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-info" style="width: {{ volleyball_percentage|default:7 }}%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Popular Terrains -->
+        <div class="progress-card">
+            <h6 class="mb-4">Terrains Populaires</h6>
+            
+            <div class="list-group list-group-flush">
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon primary me-3" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                            <i class="fas fa-futbol"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Terrain A</div>
+                            <div class="small text-muted">
+                                <i class="fas fa-star text-warning me-1"></i>4.8 (120 réservations)
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">Disponible</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon success me-3" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                            <i class="fas fa-table-tennis"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Court Central</div>
+                            <div class="small text-muted">
+                                <i class="fas fa-star text-warning me-1"></i>4.6 (95 réservations)
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning">Occupé</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon warning me-3" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                            <i class="fas fa-basketball-ball"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Basket Arena</div>
+                            <div class="small text-muted">
+                                <i class="fas fa-star text-warning me-1"></i>4.7 (80 réservations)
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">Disponible</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Modal -->
+<div class="modal fade" id="terrainMapModal" tabindex="-1" aria-labelledby="terrainMapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="terrainMapModalLabel">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    Localisation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="listMap" style="height: 500px; width: 100%;"></div>
+            </div>
+            <div class="modal-footer small text-muted">
+                <span id="listMapCoords"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+}
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+
+<script>
+// Mini Charts for Stats
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts
+createMiniChart('totalTerrainsChart', [12, 13, 14, 13, 15, 14, 15], '#4e73df');
+createMiniChart('availableTerrainsChart', [8, 9, 10, 9, 11, 10, 12], '#1cc88a');
+createMiniChart('reservationsChart', [8, 10, 9, 12, 11, 14, 12], '#36b9cc');
+createMiniChart('priceChart', [30, 28, 25, 27, 24, 25, 25], '#f6c23e');
+
+// Price range slider
+document.querySelector('input[name="prix_max"]')?.addEventListener('change', function(e) {
+    document.getElementById('prix_val').textContent = e.target.value;
+});
+
+// Clear filters
+document.getElementById('clearFilters')?.addEventListener('click', function() {
+    document.getElementById('filterForm').reset();
+    window.location.href = window.location.pathname;
+});
+
+// Export functionality
+document.getElementById('exportBtn')?.addEventListener('click', function() {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-download me-2"></i>
+                <strong class="me-auto">Export</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                Export des terrains en cours...
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+});
+
+// Refresh functionality
+document.getElementById('refreshBtn')?.addEventListener('click', function() {
+    location.reload();
+});
+
+// Map functionality
+(function(){
+    var modalEl = document.getElementById('terrainMapModal');
+    var map, marker;
+    var bsModal = new bootstrap.Modal(modalEl);
+    
+    function openMap(lat, lng, name){
+        bsModal.show();
+        setTimeout(function(){
+            if(!map){
+                map = L.map('listMap').setView([lat, lng], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+                    maxZoom: 19, 
+                    attribution: '&copy; OpenStreetMap contributors' 
+                }).addTo(map);
+                marker = L.marker([lat, lng]).addTo(map).bindPopup(name).openPopup();
+            } else {
+                map.setView([lat, lng], 13);
+                if(marker){ 
+                    marker.setLatLng([lat, lng]).bindPopup(name).openPopup(); 
+                } else { 
+                    marker = L.marker([lat, lng]).addTo(map).bindPopup(name).openPopup(); 
+                }
+            }
+            var c = document.getElementById('listMapCoords');
+            if(c) c.textContent = 'Lat: ' + lat.toFixed(6) + ' — Lng: ' + lng.toFixed(6);
+        }, 200);
+    }
+
+    document.querySelectorAll('.view-on-map-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var lat = parseFloat(this.dataset.lat);
+            var lng = parseFloat(this.dataset.lng);
+            var name = this.dataset.name || 'Terrain';
+            if(!isNaN(lat) && !isNaN(lng)){
+                openMap(lat, lng, name);
+            } else {
+                alert('Coordonnées indisponibles pour ce terrain.');
+            }
+        });
+    });
+})();
+
+// Delete functionality
+document.addEventListener('DOMContentLoaded', function(){
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Reusable confirm modal
+    let confirmModal = null;
+    function ensureConfirmModal(){
+        if (confirmModal) return confirmModal;
+        const modalHtml = `
+        <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                    Confirmer la suppression
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p id="confirmDeleteMessage"></p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Annuler
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i>Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+        return confirmModal;
+    }
+
+    document.querySelectorAll('.btn-delete-terrain').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const id = this.dataset.id;
+            const name = this.dataset.name || 'ce terrain';
+            const modal = ensureConfirmModal();
+            document.getElementById('confirmDeleteMessage').textContent = `Confirmer la suppression de "${name}" ? Cette action est irréversible.`;
+
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            const newConfirm = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+            newConfirm.addEventListener('click', async function(){
+                const url = '{% url "terrains:terrain_delete" 0 %}'.replace('0', id);
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrftoken },
+                        credentials: 'same-origin'
+                    });
+                    if (res.ok) {
+                        showToast('Terrain supprimé avec succès', 'success');
+                        const col = btn.closest('.col-md-6');
+                        if (col) col.remove();
+                        modal.hide();
+                    } else {
+                        showToast('Erreur lors de la suppression', 'danger');
+                    }
+                } catch (e) {
+                    showToast('Erreur réseau lors de la suppression', 'danger');
+                }
+            });
+
+            modal.show();
+        });
+    });
+});
+</script>
+{% endblock %}

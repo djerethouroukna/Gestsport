@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Supprimer un paiement - GestSport{% endblock %}
+
+{% block content %}
+<div class="body flex-grow-1 px-3">
+    <div class="container-lg">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center py-3 mb-3 border-bottom">
+                    <div>
+                        <h4 class="fw-bold">
+                            <i class="fas fa-trash-alt text-danger me-2"></i>
+                            Supprimer un paiement
+                        </h4>
+                        <div class="text-muted small">Confirmez la suppression du paiement</div>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a href="{% url 'payments:admin_payment_list' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-arrow-left me-1"></i>Retour
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Confirmation de suppression</strong>
+                            </div>
+                            <span class="badge bg-light text-danger">Action irréversible</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            {% if request.GET.coach %}
+                            <input type="hidden" name="coach" value="{{ request.GET.coach }}">
+                            {% endif %}
+                            
+                            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                <i class="fas fa-exclamation-triangle me-3"></i>
+                                <div>
+                                    <strong>Attention :</strong> Cette action est irréversible. Le paiement sera définitivement supprimé du système.
+                                </div>
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-credit-card me-2"></i>
+                                        Informations du paiement
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted small">Utilisateur</label>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                        {{ user.get_full_name|default:user.email|slice:":1"|upper }}
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">{{ user.get_full_name|default:user.email }}</div>
+                                                        <div class="text-muted small">{{ user.email }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted small">Montant</label>
+                                                <div class="h4 text-success mb-0">
+                                                    {{ payment.amount }} FCFA
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted small">Statut</label>
+                                                <div>
+                                                    {% if payment.status == 'completed' %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check-circle me-1"></i>{{ payment.get_status_display }}
+                                                        </span>
+                                                    {% elif payment.status == 'pending' %}
+                                                        <span class="badge bg-warning">
+                                                            <i class="fas fa-clock me-1"></i>{{ payment.get_status_display }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">
+                                                            <i class="fas fa-times-circle me-1"></i>{{ payment.get_status_display }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label text-muted small">Date de création</label>
+                                                <div class="fw-semibold">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    {{ payment.created_at|date:"d/m/Y H:i" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if reservation %}
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-calendar-check me-2"></i>
+                                        Réservation associée
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label text-muted small">Terrain</label>
+                                            <div class="fw-semibold">
+                                                <i class="fas fa-map-marker-alt me-1"></i>
+                                                {{ reservation.terrain.name }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-muted small">Date/Heure</label>
+                                            <div class="fw-semibold">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ reservation.start_time|date:"d/m/Y H:i" }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-muted small">Statut actuel</label>
+                                            <div>
+                                                {% if reservation.status == 'confirmed' %}
+                                                    <span class="badge bg-success">Confirmée</span>
+                                                {% elif reservation.status == 'pending' %}
+                                                    <span class="badge bg-warning">En attente</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ reservation.get_status_display }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if reservation.status == 'confirmed' %}
+                                    <div class="alert alert-info mt-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        La réservation sera automatiquement remise en statut "En attente" après suppression du paiement.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="d-flex justify-content-between gap-2">
+                                <a href="{% url 'payments:admin_payment_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-2"></i>Supprimer définitivement
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

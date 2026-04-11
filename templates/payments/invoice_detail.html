@@ -1,0 +1,159 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Facture {{ invoice.invoice_number }} - GestSport{% endblock %}
+
+{% block breadcrumb %}Dashboard / Factures / {{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">📄 Facture {{ invoice.invoice_number }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'payments:invoice_list' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Mes factures
+            </a>
+            <a href="{% url 'payments:invoice_download' invoice.invoice_number %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-download"></i> Télécharger PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Carte principale -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-invoice me-2"></i>
+                    Détails de la facture
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Informations de la facture -->
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Informations de la facture</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Numéro :</strong></td>
+                                <td>{{ invoice.invoice_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date de facture :</strong></td>
+                                <td>{{ invoice.invoice_date|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date de paiement :</strong></td>
+                                <td>{{ invoice.paid_date|date:"d/m/Y"|default:"Non payée" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Statut :</strong></td>
+                                <td>
+                                    {% if invoice.status == 'paid' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Payée
+                                        </span>
+                                    {% elif invoice.status == 'sent' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-envelope me-1"></i>Envoyée
+                                        </span>
+                                    {% elif invoice.status == 'draft' %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-file me-1"></i>Brouillon
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>{{ invoice.get_status_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Informations client -->
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Informations client</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Nom :</strong></td>
+                                <td>{{ invoice.user.get_full_name|default:"Non spécifié" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email :</strong></td>
+                                <td>{{ invoice.user.email }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Téléphone :</strong></td>
+                                <td>{{ invoice.user.phone|default:"Non spécifié" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="row">
+                    <!-- Détails de la réservation -->
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Détails de la réservation</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Terrain :</strong></td>
+                                <td>{{ invoice.reservation.terrain.name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Type :</strong></td>
+                                <td>{{ invoice.reservation.terrain.terrain_type }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date :</strong></td>
+                                <td>{{ invoice.reservation.start_time|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Heure :</strong></td>
+                                <td>{{ invoice.reservation.start_time|date:"H:i" }} - {{ invoice.reservation.end_time|date:"H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Durée :</strong></td>
+                                <td>{{ invoice.reservation.duration }} heures</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Détails financiers -->
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Détails financiers</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Montant HT :</strong></td>
+                                <td>{{ invoice.amount_ht|floatformat:2 }} €</td>
+                            </tr>
+                            <tr>
+                                <td><strong>TVA ({{ invoice.vat_rate }}%) :</strong></td>
+                                <td>{{ invoice.vat_amount|floatformat:2 }} €</td>
+                            </tr>
+                            <tr class="table-active">
+                                <td><strong>Total TTC :</strong></td>
+                                <td><strong>{{ invoice.amount_ttc|floatformat:2 }} €</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="text-center mt-4">
+                    <a href="{% url 'payments:invoice_download' invoice.invoice_number %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-download me-2"></i>
+                        Télécharger le PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

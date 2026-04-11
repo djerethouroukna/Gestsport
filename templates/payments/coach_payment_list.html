@@ -1,0 +1,297 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}Historique de mes Paiements - Coach - GestSport{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête de la page -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        
+                        Historique de mes Paiements
+                    </h1>
+                   
+                </div>
+                <div>
+                    <button class="btn btn-info" onclick="window.location.href='/'">
+                        Retour à l'accueil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques rapides -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    
+                    <p>TOTAL PAIEMENTS</p>
+                </div>
+                <div class="card-bottom">
+                    <p>{{ total_payments|default:0 }} paiements</p>
+                    <canvas id="miniCoachTotalPaymentsChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    
+                    <p>TAUX DE SUCCÈS</p>
+                </div>
+                <div class="card-bottom">
+                    <p>{{ completed_percentage|default:0|floatformat:1 }}% complétés</p>
+                    <canvas id="miniCoachSuccessRateChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    
+                    <p>DERNIER MONTANT</p>
+                </div>
+                <div class="card-bottom">
+                    <p>{{ last_payment_amount|default:0|floatformat:0 }} FCFA</p>
+                    <canvas id="miniCoachLastAmountChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card">
+                <div class="card-top">
+                    <p>{% if last_payment_date %}{{ last_payment_date|date:"d/m" }}{% else %}-{% endif %} DERNIER</p>
+                </div>
+                <div class="card-bottom">
+                    <p>{% if last_payment_date %}{{ last_payment_date|date:"F Y" }}{% else %}Aucun{% endif %}</p>
+                    <canvas id="miniCoachLastPaymentChart" height="30" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau des paiements -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        Mes Paiements
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-info" onclick="exportPayments()">
+                            Exporter
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="refreshPayments()">
+                            Actualiser
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if payments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Terrain</th>
+                                    <th>Date</th>
+                                    <th>Montant</th>
+                                    <th>Statut</th>
+                                    <th>Méthode</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in payments %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ p.id|truncatechars:8 }}</span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ p.reservation.terrain.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ p.reservation.terrain.get_terrain_type_display }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            
+                                            {{ p.created_at|date:"d/m/Y" }}
+                                            <br>
+                                            <small class="text-muted">{{ p.created_at|time:"H:i" }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">{{ p.amount }} FCFA</span>
+                                    </td>
+                                    <td>
+                                        {% if p.status == 'completed' %}
+                                            <span class="badge bg-success">Complété</span>
+                                        {% elif p.status == 'pending' %}
+                                            <span class="badge bg-warning">En attente</span>
+                                        {% elif p.status == 'failed' %}
+                                            <span class="badge bg-danger">Échoué</span>
+                                        {% elif p.status == 'simulated' %}
+                                            <span class="badge bg-info">Simulé</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ p.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">
+                                            {% if p.payment_method %}
+                                                {{ p.payment_method.display_name }}
+                                            {% else %}                                               
+                                                Non spécifié
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'payments:payment_detail' p.id %}" class="btn btn-outline-primary" title="Voir détails">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if p.invoice %}
+                                            <a href="{% url 'payments:invoice_download' p.invoice.invoice_number %}" class="btn btn-outline-success" title="Télécharger facture">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-receipt fa-4x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted">Aucun paiement trouvé</h5>
+                        <p class="text-muted">Vous n'avez effectué aucun paiement pour le moment.</p>
+                        <a href="{% url 'reservations:reservation_list' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Faire une réservation
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewPayment(paymentId) {
+    // Implémenter la vue des détails du paiement
+    console.log('Voir paiement:', paymentId);
+    // Vous pouvez ouvrir une modal ou rediriger vers une page de détails
+}
+
+function exportPayments() {
+    // Implémenter l'exportation des paiements
+    console.log('Exporter les paiements');
+    // Vous pouvez générer un CSV ou PDF
+}
+
+function refreshPayments() {
+    location.reload();
+}
+</script>
+{% endblock %}

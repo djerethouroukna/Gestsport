@@ -1,0 +1,292 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+<!-- DEBUG: Template reservations/reservation_from_activity.html -->
+
+{% block title %}Réserver l'Activité - {{ activity.title }}{% endblock %}
+
+{% block breadcrumb %}Réservation > {{ activity.title }}{% endblock %}
+
+{% block content %}
+<!-- Header Activité -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-4" style="width: 60px; height: 60px; font-size: 1.5rem; background: rgba(255,255,255,0.2);">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <h2 class="mb-2">{{ activity.title }}</h2>
+                            <p class="mb-1 opacity-75">{{ activity.get_activity_type_display }}</p>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <span class="badge bg-light text-dark">
+                                    <i class="fas fa-futbol me-1"></i>{{ activity.terrain.name }}
+                                </span>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Confirmée
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="text-end">
+                        <div class="small opacity-75">Durée</div>
+                        <div class="h3 mb-0">{{ activity.duration_display }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Formulaire de Réservation -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2 text-primary"></i>Formulaire de Réservation
+                </h5>
+                <span class="badge bg-info">Pré-rempli</span>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="reservationForm">
+                {% csrf_token %}
+                
+                <!-- Terrain -->
+                <div class="mb-3">
+                    <label for="{{ form.terrain.id_for_label }}" class="form-label">
+                        <i class="fas fa-map-marker-alt me-1"></i>Terrain
+                    </label>
+                    {{ form.terrain }}
+                    {% if form.terrain.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.terrain.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="text-muted">Terrain pré-sélectionné (non modifiable)</small>
+                </div>
+
+                <!-- Date et Heure -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.start_time.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>Date et Heure de Début
+                            </label>
+                            {{ form.start_time }}
+                            {% if form.start_time.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.start_time.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">Début de l'activité (non modifiable)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.end_time.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-check me-1"></i>Date et Heure de Fin
+                            </label>
+                            {{ form.end_time }}
+                            {% if form.end_time.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.end_time.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">Fin de l'activité (non modifiable)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="mb-4">
+                    <label for="{{ form.notes.id_for_label }}" class="form-label">
+                        <i class="fas fa-sticky-note me-1"></i>Notes
+                    </label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.notes.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="text-muted">Ajoutez des informations supplémentaires si nécessaire</small>
+                </div>
+
+                <!-- Boutons -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check me-2"></i>Confirmer la Réservation
+                    </button>
+                    <a href="{% url 'activities:detail' activity.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar Informations -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Détails de l'Activité -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">
+                <i class="fas fa-info-circle me-2 text-info"></i>Détails de l'Activité
+            </h6>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Type d'activité</small>
+                <strong>{{ activity.get_activity_type_display }}</strong>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Terrain</small>
+                <strong>{{ activity.terrain.name }}</strong>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Date et Heure</small>
+                <strong>{{ activity.start_time|date:"d/m/Y H:i" }} - {{ activity.end_time|date:"H:i" }}</strong>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Nombre de participants</small>
+                <strong>{{ activity.max_participants }} participants maximum</strong>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Description</small>
+                <p class="small">{{ activity.description|default:"Aucune description" }}</p>
+            </div>
+        </div>
+
+        <!-- Récapitulatif Réservation -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">
+                <i class="fas fa-shopping-cart me-2 text-success"></i>Récapitulatif
+            </h6>
+            
+            <div id="reservation-summary">
+                <div class="d-flex justify-content-between mb-2">
+                    <small>Terrain</small>
+                    <strong id="summary-terrain">{{ activity.terrain.name }}</strong>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <small>Date</small>
+                    <strong id="summary-date">{{ activity.start_time|date:"d/m/Y" }}</strong>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <small>Heure</small>
+                    <strong id="summary-time">{{ activity.start_time|date:"H:i" }} - {{ activity.end_time|date:"H:i" }}</strong>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <small>Durée</small>
+                    <strong id="summary-duration">{{ activity.duration_display }}</strong>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <small>Prix par heure</small>
+                    <strong id="summary-price">{{ activity.terrain.price_per_hour|default:20 }} FCFA</strong>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <strong>Total estimé</strong>
+                    <strong class="text-success" id="summary-total">0 FCFA</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prochaines Étapes -->
+        <div class="progress-card">
+            <h6 class="mb-3">
+                <i class="fas fa-route me-2 text-warning"></i>Prochaines Étapes
+            </h6>
+            
+            <div class="d-flex align-items-center mb-3">
+                <div class="badge bg-primary me-2">1</div>
+                <small>Confirmer cette réservation</small>
+            </div>
+            
+            <div class="d-flex align-items-center mb-3">
+                <div class="badge bg-info me-2">2</div>
+                <small>Procéder au paiement en ligne</small>
+            </div>
+            
+            <div class="d-flex align-items-center mb-3">
+                <div class="badge bg-warning me-2">3</div>
+                <small>Attente de confirmation admin</small>
+            </div>
+            
+            <div class="d-flex align-items-center">
+                <div class="badge bg-success me-2">4</div>
+                <small>Générer votre ticket d'accès</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('reservationForm');
+    const terrainSelect = document.getElementById('{{ form.terrain.id_for_label }}');
+    const startTimeInput = document.getElementById('{{ form.start_time.id_for_label }}');
+    const endTimeInput = document.getElementById('{{ form.end_time.id_for_label }}');
+    
+    // Rendre les champs non modifiables
+    if (terrainSelect) terrainSelect.readOnly = true;
+    if (startTimeInput) startTimeInput.readOnly = true;
+    if (endTimeInput) endTimeInput.readOnly = true;
+    
+    // Calcul du récapitulatif
+    function updateSummary() {
+        const terrain = "{{ activity.terrain.name }}";
+        const startDate = new Date("{{ activity.start_time|date:'c' }}");
+        const endDate = new Date("{{ activity.end_time|date:'c' }}");
+        const pricePerHour = {{ activity.terrain.price_per_hour|default:20 }};
+        
+        // Calcul durée en heures
+        const duration = (endDate - startDate) / (1000 * 60 * 60);
+        const total = Math.round(duration * pricePerHour);
+        
+        // Mise à jour du récapitulatif
+        document.getElementById('summary-terrain').textContent = terrain;
+        document.getElementById('summary-date').textContent = startDate.toLocaleDateString('fr-FR');
+        document.getElementById('summary-time').textContent = 
+            startDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'}) + ' - ' +
+            endDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+        document.getElementById('summary-duration').textContent = duration.toFixed(1) + ' heures';
+        document.getElementById('summary-total').textContent = total.toLocaleString('fr-FR') + ' FCFA';
+    }
+    
+    // Initialisation
+    updateSummary();
+    
+    // Validation du formulaire
+    form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>En cours...';
+        
+        // Le formulaire sera soumis normalement
+    });
+});
+</script>
+{% endblock %}

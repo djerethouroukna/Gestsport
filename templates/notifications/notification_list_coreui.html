@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Card Header -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0">
+                            <i class="fas fa-bell me-2"></i>
+                            Notifications
+                        </h4>
+                        <small class="text-muted">
+                            {% if notifications %}
+                                {{ notifications|length }} notification(s) reçue(s)
+                            {% else %}
+                                Aucune notification
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            Actualiser
+                        </button>
+                        {% if notifications %}
+                            <button class="btn btn-sm btn-outline-danger" onclick="markAllAsRead()">
+                                <i class="fas fa-check-double me-1"></i>
+                                Tout marquer comme lu
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if notifications %}
+                <!-- Notifications List -->
+                <div class="row">
+                    {% for notif in notifications %}
+                        <div class="col-12 mb-3">
+                            <div class="card {% if not notif.5 %}border-warning{% else %}border-light{% endif %} shadow-sm notification-card" 
+                                 data-notification-id="{{ notif.0 }}">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <!-- Icon and Content -->
+                                        <div class="col-md-8">
+                                            <div class="d-flex align-items-start">
+                                                <!-- Notification Icon -->
+                                                <div class="notification-icon me-3">
+                                                    {% if 'PAIEMENT' in notif.4 %}
+                                                        <div class="icon-wrapper bg-success bg-opacity-10 text-success">
+                                                            <i class="fas fa-credit-card fa-lg"></i>
+                                                        </div>
+                                                    {% elif 'CONFIRMÉE' in notif.4 %}
+                                                        <div class="icon-wrapper bg-primary bg-opacity-10 text-primary">
+                                                            <i class="fas fa-check-circle fa-lg"></i>
+                                                        </div>
+                                                    {% elif 'REJET' in notif.4 %}
+                                                        <div class="icon-wrapper bg-danger bg-opacity-10 text-danger">
+                                                            <i class="fas fa-times-circle fa-lg"></i>
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="icon-wrapper bg-info bg-opacity-10 text-info">
+                                                            <i class="fas fa-info-circle fa-lg"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <!-- Message Content -->
+                                                <div class="flex-grow-1">
+                                                    <h6 class="card-title mb-1 {% if not notif.5 %}fw-bold{% endif %}">
+                                                        {{ notif.4 }}
+                                                    </h6>
+                                                    <div class="text-muted small">
+                                                        <i class="far fa-clock me-1"></i>
+                                                        <span class="time-ago" data-time="{{ notif.6|date:'Y-m-d H:i:s' }}">
+                                                            {{ notif.6|date:'d/m/Y H:i' }}
+                                                        </span>
+                                                        {% if not notif.5 %}
+                                                            <span class="badge bg-warning text-dark ms-2">
+                                                                <i class="fas fa-circle me-1" style="font-size: 6px;"></i>
+                                                                Non lue
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Actions -->
+                                        <div class="col-md-4 text-end">
+                                            {% if notif.1 %}
+                                                <a href="/reservations/{{ notif.1 }}/" 
+                                                   class="btn btn-sm btn-primary me-2">
+                                                    <i class="fas fa-eye me-1"></i>
+                                                    Voir
+                                                </a>
+                                            {% endif %}
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                    onclick="deleteNotification('{{ notif.0 }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination (si nécessaire) -->
+                {% if notifications|length > 20 %}
+                    <div class="d-flex justify-content-center mt-4">
+                        <nav>
+                            <ul class="pagination">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">1</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">2</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-bell-slash fa-4x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted mb-3">Aucune notification</h5>
+                    <p class="text-muted">
+                        Vous n'avez pas de nouvelles notifications pour le moment.
+                    </p>
+                    <div class="mt-4">
+                        <img src="{% static 'img/illustrations/empty-notifications.svg' %}" 
+                             alt="No notifications" 
+                             class="img-fluid" 
+                             style="max-width: 200px; opacity: 0.5;">
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.notification-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #dee2e6;
+}
+
+.notification-card.border-warning {
+    border-left-color: #ffc107;
+    background-color: #fffdf7;
+}
+
+.notification-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.notification-icon .icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.time-ago {
+    font-size: 0.85rem;
+}
+
+.card-title {
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .notification-card .row {
+        flex-direction: column;
+    }
+    
+    .notification-card .col-md-4 {
+        text-align: left !important;
+        margin-top: 1rem;
+    }
+    
+    .notification-card .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+
+<script>
+// Auto-rafraîchissement toutes les 30 secondes
+setInterval(function() {
+    updateNotificationCount();
+    // Optionnel: recharger la page si de nouvelles notifications
+    fetch('/notifications/count/')
+        .then(response => response.json())
+        .then(data => {
+            const currentCount = document.querySelectorAll('.notification-card').length;
+            if (data.count > currentCount) {
+                location.reload();
+            }
+        });
+}, 30000);
+
+function updateNotificationCount() {
+    fetch('/notifications/count/')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('notification-count');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.className = data.count > 0 ? 
+                    'badge bg-danger position-absolute top-0 start-100 translate-middle' : 
+                    'badge bg-secondary position-absolute top-0 start-100 translate-middle';
+            }
+        });
+}
+
+function markAllAsRead() {
+    fetch('/notifications/mark-all-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function deleteNotification(notificationId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette notification ?')) {
+        fetch(`/notifications/delete/${notificationId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const card = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                if (card) {
+                    card.style.transition = 'opacity 0.3s';
+                    card.style.opacity = '0';
+                    setTimeout(() => card.remove(), 300);
+                }
+                updateNotificationCount();
+            }
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Formatage du temps relatif
+function formatTimeAgo() {
+    const timeElements = document.querySelectorAll('.time-ago');
+    timeElements.forEach(element => {
+        const time = new Date(element.dataset.time);
+        const now = new Date();
+        const diff = Math.floor((now - time) / 1000); // différence en secondes
+        
+        let text = '';
+        if (diff < 60) {
+            text = 'Il y a quelques instants';
+        } else if (diff < 3600) {
+            text = `Il y a ${Math.floor(diff / 60)} minute(s)`;
+        } else if (diff < 86400) {
+            text = `Il y a ${Math.floor(diff / 3600)} heure(s)`;
+        } else {
+            text = `Il y a ${Math.floor(diff / 86400)} jour(s)`;
+        }
+        
+        element.textContent = text;
+    });
+}
+
+// Mettre à jour le formatage du temps chaque minute
+formatTimeAgo();
+setInterval(formatTimeAgo, 60000);
+</script>
+{% endblock %}

@@ -1,0 +1,605 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Utilisateurs - GestSport{% endblock %}
+
+{% block breadcrumb %}Utilisateurs{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #122fae 0%, #1e0cba 100%); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        <i class="fas fa-users me-3"></i>
+                        Gestion des Utilisateurs
+                    </h2>
+                    <p class="mb-0 opacity-75">Administrez tous les utilisateurs de la plateforme</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'users:admin_register' %}" class="btn btn-light">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Créer un utilisateur
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card primary">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">TOTAL UTILISATEURS</div>
+                    <div class="stat-value">{{ total_users }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+12.5%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <canvas id="totalUsersChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card success">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">UTILISATEURS ACTIFS</div>
+                    <div class="stat-value">{{ active_users }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+8.3%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+            <canvas id="activeUsersChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card info">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">ENTRAÎNEURS</div>
+                    <div class="stat-value">{{ coach_users }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+15.2%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-running"></i>
+                </div>
+            </div>
+            <canvas id="coachUsersChart" height="60"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card warning">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">JOUEURS</div>
+                    <div class="stat-value">{{ player_users }}</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up me-1"></i>+20.7%
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-futbol"></i>
+                </div>
+            </div>
+            <canvas id="playerUsersChart" height="60"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Filters -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-filter me-2 text-primary"></i>
+                    Filtres de recherche
+                </h6>
+                <button class="btn btn-sm btn-outline-secondary" id="clearFilters">
+                    <i class="fas fa-times me-1"></i>Effacer
+                </button>
+            </div>
+            
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label fw-semibold">
+                            <i class="fas fa-search me-2 text-primary"></i>Recherche
+                        </label>
+                        <input type="text" name="search" value="{{ request.GET.search }}" 
+                               class="form-control" placeholder="Nom, email, ville...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="role" class="form-label fw-semibold">
+                            <i class="fas fa-user-tag me-2 text-info"></i>Rôle
+                        </label>
+                        <select name="role" class="form-select">
+                            <option value="">Tous les rôles</option>
+                            <option value="admin" {% if request.GET.role == 'admin' %}selected{% endif %}>
+                                <i class="fas fa-crown me-1"></i>Administrateur
+                            </option>
+                            <option value="coach" {% if request.GET.role == 'coach' %}selected{% endif %}>
+                                <i class="fas fa-running me-1"></i>Entraîneur
+                            </option>
+                            <option value="player" {% if request.GET.role == 'player' %}selected{% endif %}>
+                                <i class="fas fa-futbol me-1"></i>Joueur
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label fw-semibold">
+                            <i class="fas fa-toggle-on me-2 text-success"></i>Statut
+                        </label>
+                        <select name="status" class="form-select">
+                            <option value="">Tous</option>
+                            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>
+                                <i class="fas fa-check-circle me-1"></i>Actifs
+                            </option>
+                            <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>
+                                <i class="fas fa-times-circle me-1"></i>Inactifs
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i>Filtrer
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Users Table -->
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2 text-info"></i>
+                    Liste des Utilisateurs
+                    <span class="badge bg-primary ms-2">{{ users|length }}</span>
+                </h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" id="exportBtn">
+                        <i class="fas fa-download me-1"></i>Exporter
+                    </button>
+                    <button class="btn btn-outline-success" id="refreshBtn">
+                        <i class="fas fa-sync me-1"></i>Actualiser
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user me-2"></i>
+                                    Nom
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    Email
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-tag me-2"></i>
+                                    Rôle
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-toggle-on me-2"></i>
+                                    Statut
+                                </div>
+                            </th>
+                            <th class="text-center">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-cogs me-2"></i>
+                                    Actions
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="user-avatar me-3" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                                        {{ u.get_full_name.0|default:u.email.0|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ u.get_full_name|default:u.email }}</div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            {{ u.date_joined|date:"d/m/Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-envelope text-muted me-2"></i>
+                                    <span>{{ u.email }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if u.role == 'admin' %}danger{% elif u.role == 'coach' %}success{% else %}primary{% endif %}">
+                                    {% if u.role == 'admin' %}
+                                        <i class="fas fa-crown me-1"></i>Administrateur
+                                    {% elif u.role == 'coach' %}
+                                        <i class="fas fa-running me-1"></i>Entraîneur
+                                    {% else %}
+                                        <i class="fas fa-futbol me-1"></i>Joueur
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           {% if u.is_active %}checked{% endif %} 
+                                           data-user-id="{{ u.id }}"
+                                           id="statusToggle{{ u.id }}">
+                                    <label class="form-check-label" for="statusToggle{{ u.id }}">
+                                        <span class="badge bg-{% if u.is_active %}success{% else %}secondary{% endif %}">
+                                            {% if u.is_active %}
+                                                <i class="fas fa-check-circle me-1"></i>Actif
+                                            {% else %}
+                                                <i class="fas fa-times-circle me-1"></i>Inactif
+                                            {% endif %}
+                                        </span>
+                                    </label>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'users:user_detail' u.id %}" 
+                                       class="btn btn-outline-info" title="Voir">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'users:user_edit' u.id %}" 
+                                       class="btn btn-outline-warning" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ u.id }}"
+                                            title="Supprimer">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Delete Modal -->
+                        <div class="modal fade" id="deleteModal{{ u.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                                            Supprimer l'utilisateur
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="post" action="{% url 'users:user_delete' u.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <div class="alert alert-danger">
+                                                <strong>Attention !</strong> Cette action est irréversible.
+                                            </div>
+                                            <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ u.get_full_name|default:u.email }}</strong> ?</p>
+                                            <p class="text-muted">Toutes ses données seront supprimées définitivement.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="fas fa-times me-2"></i>Annuler
+                                            </button>
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-trash me-2"></i>Supprimer
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-3x mb-3 d-block"></i>
+                                    <h5>Aucun utilisateur trouvé</h5>
+                                    <p>Essayez de modifier vos filtres de recherche</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if users.has_other_pages %}
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <small>
+                            Page {{ users.number }} sur {{ users.paginator.num_pages }} 
+                            ({{ users.paginator.count }} utilisateurs au total)
+                        </small>
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if users.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.previous_page_number }}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in users.paginator.page_range %}
+                                {% if users.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if users.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.next_page_number }}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Quick Actions -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Actions Rapides</h6>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'users:admin_register' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Créer un utilisateur
+                </a>
+                <button class="btn btn-success" id="bulkActivateBtn">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Activer la sélection
+                </button>
+                <button class="btn btn-warning" id="bulkDeactivateBtn">
+                    <i class="fas fa-pause-circle me-2"></i>
+                    Désactiver la sélection
+                </button>
+                <button class="btn btn-info" id="sendNotificationBtn">
+                    <i class="fas fa-bell me-2"></i>
+                    Envoyer notification
+                </button>
+            </div>
+        </div>
+        
+        <!-- User Distribution -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Répartition des Utilisateurs</h6>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        <i class="fas fa-crown text-danger me-1"></i>Administrateurs
+                    </div>
+                    <div class="small">{{ admin_count|default:0 }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-danger" style="width: {{ admin_count|default:0|divide:total_users|multiply:100|floatformat:0 }}%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        <i class="fas fa-running text-success me-1"></i>Entraîneurs
+                    </div>
+                    <div class="small">{{ coach_users }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: {{ coach_users|divide:total_users|multiply:100|floatformat:0 }}%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        <i class="fas fa-futbol text-primary me-1"></i>Joueurs
+                    </div>
+                    <div class="small">{{ player_users }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: {{ player_users|divide:total_users|multiply:100|floatformat:0 }}%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="progress-card">
+            <h6 class="mb-4">Activité Récente</h6>
+            
+            <div class="list-group list-group-flush">
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-3" style="width: 35px; height: 35px; font-size: 0.8rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            JD
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">John Doe</div>
+                            <small class="text-muted">Nouveau joueur inscrit</small>
+                        </div>
+                        <small class="text-muted">Il y a 2 min</small>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-3" style="width: 35px; height: 35px; font-size: 0.8rem; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                            SM
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Sarah Martin</div>
+                            <small class="text-muted">Promue entraîneur</small>
+                        </div>
+                        <small class="text-muted">Il y a 1 heure</small>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-3" style="width: 35px; height: 35px; font-size: 0.8rem; background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
+                            MJ
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Mike Johnson</div>
+                            <small class="text-muted">Compte activé</small>
+                        </div>
+                        <small class="text-muted">Il y a 3 heures</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mini Charts for Stats
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts
+createMiniChart('totalUsersChart', [800, 850, 820, 900, 880, 920, 950], '#4e73df');
+createMiniChart('activeUsersChart', [700, 720, 750, 780, 760, 800, 820], '#1cc88a');
+createMiniChart('coachUsersChart', [80, 85, 90, 88, 95, 92, 98], '#36b9cc');
+createMiniChart('playerUsersChart', [600, 650, 680, 720, 700, 750, 780], '#f6c23e');
+
+// Clear filters
+document.getElementById('clearFilters')?.addEventListener('click', function() {
+    document.getElementById('filterForm').reset();
+    window.location.href = window.location.pathname;
+});
+
+// Export functionality
+document.getElementById('exportBtn')?.addEventListener('click', function() {
+    // Simulate export
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-download me-2"></i>
+                <strong class="me-auto">Export</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                Export des utilisateurs en cours...
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+});
+
+// Refresh functionality
+document.getElementById('refreshBtn')?.addEventListener('click', function() {
+    location.reload();
+});
+
+// Status toggle
+document.querySelectorAll('[id^="statusToggle"]').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        const userId = this.dataset.userId;
+        const isActive = this.checked;
+        
+        // Simulate API call
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-${isActive ? 'success' : 'warning'} text-white">
+                    <i class="fas fa-${isActive ? 'check-circle' : 'pause-circle'} me-2"></i>
+                    <strong class="me-auto">Statut modifié</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    Utilisateur ${isActive ? 'activé' : 'désactivé'} avec succès
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,658 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Utilisateurs - GestSport{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1em;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}Utilisateurs{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg,  #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">                       
+                        Liste des Utilisateurs
+                    </h2>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'users:admin_register' %}" class="btn btn-info">
+                        Ajouter un utilisateur
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ total_users }} TOTAL </p>
+            </div>
+            <div class="card-bottom">
+                <p>100.0%</p>
+                <canvas id="miniTotalUsersChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ active_users }} ACTIFS</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ active_percentage|floatformat:1 }}%</p>
+                <canvas id="miniActiveUsersChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ coach_users }} ENTRAÎNEURS</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ coach_percentage|floatformat:1 }}%</p>
+                <canvas id="miniCoachUsersChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <p>{{ player_users }} SCANNER</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ player_percentage|floatformat:1 }}%</p>
+                <canvas id="miniPlayerUsersChart" height="40" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Filters -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">     
+                    Récherche filtrées
+                </h6>
+                <button class="btn btn-sm btn-outline-secondary" id="clearFilters">
+                    Effacer
+                </button>
+            </div>
+            
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label fw-semibold">
+                            <i class="fas fa-search me-2 text-info"></i>Recherche
+                        </label>
+                        <input type="text" name="search" value="{{ request.GET.search }}" 
+                               class="form-control" placeholder="Nom, email, ville...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="role" class="form-label fw-semibold">
+                            Rôle
+                        </label>
+                        <select name="role" class="form-select">
+                            <option value="">Tous les rôles</option>
+                            <option value="admin" {% if request.GET.role == 'admin' %}selected{% endif %}>
+                                Administrateur
+                            </option>
+                            <option value="coach" {% if request.GET.role == 'coach' %}selected{% endif %}>
+                                <i class="fas fa-running me-1"></i>Entraîneur
+                            </option>
+                            
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label fw-semibold">
+                            <i class="fas fa-toggle-on me-2 text-success"></i>Statut
+                        </label>
+                        <select name="status" class="form-select">
+                            <option value="">Tous</option>
+                            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>
+                                <i class="fas fa-check-circle me-1"></i>Actifs
+                            </option>
+                            <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>
+                                <i class="fas fa-times-circle me-1"></i>Inactifs
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-search me-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Users Table -->
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    
+                    Les utilisateurs
+                    <span class="badge bg-info ms-2">{{ users|length }}</span>
+                </h6>
+                
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    
+                                    Nom
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    
+                                    Email
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    
+                                    Rôle
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    
+                                    Statut
+                                </div>
+                            </th>
+                            <th class="text-center">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    
+                                    Actions
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="user-avatar me-3" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                                        {{ u.get_full_name.0|default:u.email.0|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ u.get_full_name|default:u.email }}</div>
+                                        <small class="text-muted">
+                                           
+                                            {{ u.date_joined|date:"d/m/Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    
+                                    <span>{{ u.email }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if u.role == 'admin' %}danger{% elif u.role == 'coach' %}success{% else %}info{% endif %}">
+                                    {% if u.role == 'admin' %}
+                                        Administrateur
+                                    {% elif u.role == 'coach' %}
+                                        Entraîneur
+                                    {% else %}
+                                        Scanner
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           {% if u.is_active %}checked{% endif %} 
+                                           data-user-id="{{ u.id }}"
+                                           id="statusToggle{{ u.id }}">
+                                    <label class="form-check-label" for="statusToggle{{ u.id }}">
+                                        <span class="badge bg-{% if u.is_active %}success{% else %}Infor {% endif %}">
+                                            {% if u.is_active %}
+                                                <i class="fas fa-check-circle me-1"></i>Actif
+                                            {% else %}
+                                                <i class="fas fa-times-circle me-1"></i>Inactif
+                                            {% endif %}
+                                        </span>
+                                    </label>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="{% url 'users:user_detail' u.id %}" 
+                                       class="social-icon info" 
+                                       title="Voir"
+                                       style="width: 35px; height: 35px; font-size: 0.9rem; text-decoration: none;">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'users:user_edit' u.id %}" 
+                                       class="social-icon warning" 
+                                       title="Modifier"
+                                       style="width: 35px; height: 35px; font-size: 0.9rem; text-decoration: none;">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="social-icon danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ u.id }}"
+                                            title="Supprimer"
+                                            style="width: 35px; height: 35px; font-size: 0.9rem;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Delete Modal -->
+                        <div class="modal fade" id="deleteModal{{ u.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                                            Supprimer l'utilisateur
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="post" action="{% url 'users:user_delete' u.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <div class="alert alert-danger">
+                                                <strong>Attention !</strong> Cette action est irréversible.
+                                            </div>
+                                            <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ u.get_full_name|default:u.email }}</strong> ?</p>
+                                            <p class="text-muted">Toutes ses données seront supprimées définitivement.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="fas fa-times me-2"></i>Annuler
+                                            </button>
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-trash me-2"></i>Supprimer
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-3x mb-3 d-block"></i>
+                                    <h5>Aucun utilisateur trouvé</h5>
+                                    <p>Essayez de modifier vos filtres de recherche</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if users.has_other_pages %}
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <small>
+                            Page {{ users.number }} sur {{ users.paginator.num_pages }} 
+                            ({{ users.paginator.count }} utilisateurs au total)
+                        </small>
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if users.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.previous_page_number }}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in users.paginator.page_range %}
+                                {% if users.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if users.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.next_page_number }}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Quick Actions 
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Actions Rapides</h6>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'users:admin_register' %}" class="btn btn-info">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Créer un utilisateur
+                </a>
+                <button class="btn btn-info" id="bulkActivateBtn">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Activer la sélection
+                </button>
+                <button class="btn btn-info" id="bulkDeactivateBtn">
+                    <i class="fas fa-pause-circle me-2"></i>
+                    Désactiver la sélection
+                </button>
+                <button class="btn btn-info" id="sendNotificationBtn">
+                    <i class="fas fa-bell me-2"></i>
+                    Envoyer notification
+                </button>
+            </div>
+        </div>-->
+        
+        <!-- User Distribution -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Répartition des Utilisateurs</h6>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        Administrateurs
+                    </div>
+                    <div class="small">{{ admin_count }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-danger" style="width: {{ admin_percentage|floatformat:0 }}%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        </i>Entraîneurs
+                    </div>
+                    <div class="small">{{ coach_users }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: {{ coach_percentage|floatformat:0 }}%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">
+                        Scanners
+                    </div>
+                    <div class="small">{{ player_users }}</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-info" style="width: {{ player_percentage|floatformat:0 }}%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity 
+        <div class="progress-card">
+            <h6 class="mb-4">Activité Récente</h6>
+            
+            <div class="list-group list-group-flush">
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-3" style="width: 35px; height: 35px; font-size: 0.8rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            JD
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">John Doe</div>
+                            <small class="text-muted">Nouveau joueur inscrit</small>
+                        </div>
+                        <small class="text-muted">Il y a 2 min</small>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-3" style="width: 35px; height: 35px; font-size: 0.8rem; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                            SM
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Sarah Martin</div>
+                            <small class="text-muted">Promue entraîneur</small>
+                        </div>
+                        <small class="text-muted">Il y a 1 heure</small>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-3" style="width: 35px; height: 35px; font-size: 0.8rem; background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
+                            MJ
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Mike Johnson</div>
+                            <small class="text-muted">Compte activé</small>
+                        </div>
+                        <small class="text-muted">Il y a 3 heures</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> -->
+
+<script>
+// Mini Charts for Stats
+function createMiniChart(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: data,
+                borderColor: color,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
+}
+
+// Initialize mini charts
+createMiniChart('totalUsersChart', [800, 850, 820, 900, 880, 920, 950], '#4e73df');
+createMiniChart('activeUsersChart', [700, 720, 750, 780, 760, 800, 820], '#1cc88a');
+createMiniChart('coachUsersChart', [80, 85, 90, 88, 95, 92, 98], '#36b9cc');
+createMiniChart('playerUsersChart', [600, 650, 680, 720, 700, 750, 780], '#f6c23e');
+
+// Clear filters
+document.getElementById('clearFilters')?.addEventListener('click', function() {
+    document.getElementById('filterForm').reset();
+    window.location.href = window.location.pathname;
+});
+
+// Export functionality
+document.getElementById('exportBtn')?.addEventListener('click', function() {
+    // Simulate export
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-download me-2"></i>
+                <strong class="me-auto">Export</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                Export des utilisateurs en cours...
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+});
+
+// Refresh functionality
+document.getElementById('refreshBtn')?.addEventListener('click', function() {
+    location.reload();
+});
+
+// Status toggle
+document.querySelectorAll('[id^="statusToggle"]').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        const userId = this.dataset.userId;
+        const isActive = this.checked;
+        
+        // Simulate API call
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-${isActive ? 'success' : 'warning'} text-white">
+                    <i class="fas fa-${isActive ? 'check-circle' : 'pause-circle'} me-2"></i>
+                    <strong class="me-auto">Statut modifié</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    Utilisateur ${isActive ? 'activé' : 'désactivé'} avec succès
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    });
+});
+</script>
+{% endblock %}

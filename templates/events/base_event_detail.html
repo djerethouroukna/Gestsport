@@ -1,0 +1,129 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}{{ object.title }} - GestSport{% endblock %}
+
+{% block breadcrumb %}{{ object.title }}{% endblock %}
+
+{% block content %}
+<!-- Carte principale de l'événement -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-alt me-2"></i>
+            {% block event_type %}Événement{% endblock %}
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Informations communes -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="text-muted small">Titre</label>
+                    <div class="fw-semibold">{{ object.title }}</div>
+                </div>
+                {% if object.description %}
+                <div class="mb-3">
+                    <label class="text-muted small">Description</label>
+                    <div class="mt-2">{{ object.description|linebreaks }}</div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="text-muted small">Terrain</label>
+                    <div class="fw-semibold">{{ object.terrain.name }}</div>
+                    <small class="text-muted">{{ object.terrain.get_terrain_type_display }}</small>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Date et heure</label>
+                    <div class="fw-semibold">{{ object.start_time|date:'d/m/Y' }}</div>
+                    <div class="text-muted">{{ object.start_time|time:'H:i' }} - {{ object.end_time|time:'H:i' }}</div>
+                </div>
+                {% if object.duration %}
+                <div class="mb-3">
+                    <label class="text-muted small">Durée</label>
+                    <div class="fw-semibold">{{ object.duration_hours|floatformat:1 }} heures</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Champs spécifiques (à surcharger) -->
+        {% block specific_fields %}{% endblock %}
+        
+        <!-- Statut et actions -->
+        <div class="row">
+            <div class="col-md-6">
+                {% block status_field %}{% endblock %}
+            </div>
+            <div class="col-md-6 text-end">
+                {% block actions %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informations supplémentaires -->
+{% block extra_content %}{% endblock %}
+
+<!-- Timeline de l'événement -->
+<div class="card shadow">
+    <div class="card-header bg-white">
+        <h6 class="mb-0">
+            <i class="fas fa-history me-2"></i>
+            Historique
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-marker bg-primary"></div>
+                <div class="timeline-content">
+                    <div class="fw-semibold">Création</div>
+                    <small class="text-muted">{{ object.created_at|date:'d/m/Y H:i' }}</small>
+                </div>
+            </div>
+            
+            {% if object.updated_at != object.created_at %}
+            <div class="timeline-item">
+                <div class="timeline-marker bg-warning"></div>
+                <div class="timeline-content">
+                    <div class="fw-semibold">Modification</div>
+                    <small class="text-muted">{{ object.updated_at|date:'d/m/Y H:i' }}</small>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% block timeline_events %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -20px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+</style>
+{% endblock %}

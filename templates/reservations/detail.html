@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Réservation #{{ reservation.id }} - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{% url 'reservations:reservation_list' %}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="fas fa-arrow-left me-1"></i>Retour aux réservations
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Infos principales -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Réservation {{ reservation.id }}</h5>
+                    <span class="badge bg-{% if reservation.status == 'pending' %}warning{% elif reservation.status == 'confirmed' %}success{% else %}danger{% endif %} fs-6">
+                        {{ reservation.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-2">Terrain</h6>
+                            <p class="mb-2">{{ reservation.terrain.name }}</p>
+                            <p class="text-muted small">{{ reservation.terrain.get_terrain_type_display }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-2">Dates</h6>
+                            <p class="mb-2">
+                                <i class="fas fa-calendar me-2"></i>
+                                {{ reservation.start_time|date:"d/m/Y H:i" }} 
+                                <i class="fas fa-arrow-right me-2 ms-2"></i>
+                                {{ reservation.end_time|date:"H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tarification -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Détails de la Facturation</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <td>Prix par heure</td>
+                            <td class="text-end">{{ reservation.terrain.price_per_hour }} FCFA</td>
+                        </tr>
+                        <tr>
+                            <td>Durée</td>
+                            <td class="text-end">{{ duration }} heures</td>
+                        </tr>
+                        <tr class="border-top fw-bold">
+                            <td>Montant Total</td>
+                            <td class="text-end text-success fs-5">{{ reservation.total_amount }} FCFA</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Paiement -->
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Paiement</h5>
+                </div>
+                <div class="card-body">
+                    {% if reservation.is_paid %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Paiement effectué le {{ reservation.payment.created_at|date:'d/m/Y à H:i' }}</strong>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Paiement en attente</strong>
+                    </div>
+                    <a href="{% url 'reservations:payment_checkout' reservation.id %}" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-credit-card me-2"></i>Procéder au Paiement
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar actions -->
+        <div class="col-lg-4">
+            <div class="card shadow sticky-lg-top" style="top: 80px;">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">Actions</h6>
+                </div>
+                <div class="d-grid gap-2 p-3">
+                    {% if reservation.status == 'pending' %}
+                    <button class="btn btn-danger" onclick="return confirm('Annuler cette réservation ?')">
+                        <i class="fas fa-times me-2"></i>Annuler la Réservation
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-outline-secondary">
+                        <i class="fas fa-download me-2"></i>Télécharger Facture
+                    </button>
+                    <button class="btn btn-outline-secondary">
+                        <i class="fas fa-envelope me-2"></i>Envoyer par Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

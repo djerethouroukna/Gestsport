@@ -1,0 +1,2 @@
+# Ce fichier garantit que le dossier logs est conservé dans git
+# Les fichiers de logs sont exclus par .gitignore

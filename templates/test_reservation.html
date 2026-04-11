@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Réservation</title>
+</head>
+<body>
+    <h1>Test de Création de Réservation</h1>
+    
+    <h2>Étape 1: Créer une réservation</h2>
+    <a href="/reservations/create/?activity_id=1" target="_blank">
+        <button>Créer Réservation (Activity ID=1)</button>
+    </a>
+    
+    <h2>Étape 2: Aller directement au paiement (après création)</h2>
+    <p>Une fois la réservation créée, vous serez redirigé automatiquement vers la page de paiement.</p>
+    
+    <h2>Étape 3: Test manuel du paiement</h2>
+    <p>Si la redirection ne fonctionne pas, testez manuellement:</p>
+    <a href="/reservations/1/checkout/" target="_blank">
+        <button>Paiement Réservation #1</button>
+    </a>
+    
+    <h2>Logs du serveur</h2>
+    <p>Regardez la console du serveur pour voir les logs de débogage.</p>
+    
+    <script>
+        console.log('Page de test chargée');
+    </script>
+</body>
+</html>

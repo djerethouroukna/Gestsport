@@ -1,0 +1,609 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Paramètres - GestSport{% endblock %}
+
+{% block breadcrumb %}Paramètres{% endblock %}
+
+{% block content %}
+<!-- Settings Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        <i class="fas fa-cog me-3"></i>
+                        Paramètres du Compte
+                    </h2>
+                    <p class="mb-0 opacity-75">Gérez vos préférences et la sécurité de votre compte</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                        {{ user.get_full_name.0|default:user.email.0|upper }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Settings -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Security Settings -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-shield-alt me-2 text-primary"></i>
+                    Sécurité
+                </h6>
+                <span class="badge bg-success">Sécurisé</span>
+            </div>
+            
+            <div class="row align-items-center mb-4">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon primary me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Mot de Passe</h6>
+                            <p class="text-muted mb-0">Dernière modification il y a 30 jours</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#passwordModal">
+                        <i class="fas fa-edit me-1"></i>Changer
+                    </button>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row align-items-center mb-4">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon info me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Authentification à 2 Facteurs</h6>
+                            <p class="text-muted mb-0">Ajoutez une couche de sécurité supplémentaire</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="twoFactorToggle">
+                        <label class="form-check-label" for="twoFactorToggle"></label>
+                    </div>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon success me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Sessions Actives</h6>
+                            <p class="text-muted mb-0">3 appareils connectés</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-list me-1"></i>Voir
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preferences -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-sliders-h me-2 text-info"></i>
+                    Préférences
+                </h6>
+                <button type="submit" form="preferencesForm" class="btn btn-success btn-sm">
+                    <i class="fas fa-save me-1"></i>Enregistrer
+                </button>
+            </div>
+            
+            <form method="post" id="preferencesForm">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="languageSelect" class="form-label fw-semibold">
+                            <i class="fas fa-globe me-2 text-primary"></i>Langue
+                        </label>
+                        <select class="form-select" id="languageSelect">
+                            <option value="fr" selected>Français</option>
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="ar">العربية</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="themeSelect" class="form-label fw-semibold">
+                            <i class="fas fa-palette me-2 text-warning"></i>Thème
+                        </label>
+                        <select class="form-select" id="themeSelect">
+                            <option value="light" selected>Clair</option>
+                            <option value="dark">Sombre</option>
+                            <option value="auto">Automatique</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="timezoneSelect" class="form-label fw-semibold">
+                            <i class="fas fa-clock me-2 text-success"></i>Fuseau Horaire
+                        </label>
+                        <select class="form-select" id="timezoneSelect">
+                            <option value="Africa/Ndjamena" selected>N'Djamena (GMT+1)</option>
+                            <option value="Europe/Paris">Paris (GMT+1)</option>
+                            <option value="UTC">UTC (GMT+0)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="currencySelect" class="form-label fw-semibold">
+                            <i class="fas fa-money-bill-wave me-2 text-info"></i>Devise
+                        </label>
+                        <select class="form-select" id="currencySelect">
+                            <option value="XAF" selected>FCFA (XAF)</option>
+                            <option value="EUR">Euro ( FCFA)</option>
+                            <option value="USD">Dollar ($)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                            <label class="form-check-label" for="emailNotifications">
+                                <i class="fas fa-envelope me-2 text-primary"></i>
+                                Notifications par email
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="smsNotifications">
+                            <label class="form-check-label" for="smsNotifications">
+                                <i class="fas fa-sms me-2 text-info"></i>
+                                Notifications par SMS
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                            <label class="form-check-label" for="pushNotifications">
+                                <i class="fas fa-bell me-2 text-warning"></i>
+                                Notifications push
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="publicProfile" checked>
+                            <label class="form-check-label" for="publicProfile">
+                                <i class="fas fa-eye me-2 text-success"></i>
+                                Profil public
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Privacy Settings -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-user-shield me-2 text-warning"></i>
+                    Confidentialité
+                </h6>
+                <span class="badge bg-info">Configuré</span>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showEmail" checked>
+                        <label class="form-check-label" for="showEmail">
+                            Afficher l'email dans le profil
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showPhone">
+                        <label class="form-check-label" for="showPhone">
+                            Afficher le téléphone dans le profil
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="allowFriendRequests" checked>
+                        <label class="form-check-label" for="allowFriendRequests">
+                            Autoriser les demandes d'amis
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="dataAnalytics">
+                        <label class="form-check-label" for="dataAnalytics">
+                            Participer aux analytics
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Danger Zone -->
+        <div class="progress-card border-danger">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0 text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Zone Dangereuse
+                </h6>
+                <span class="badge bg-danger">Attention</span>
+            </div>
+            
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon danger me-3" style="width: 50px; height: 50px; font-size: 1.2rem; background: #e74a3b;">
+                            <i class="fas fa-trash"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 text-danger">Supprimer le Compte</h6>
+                            <p class="text-muted mb-0">Cette action est irréversible. Toutes vos données seront supprimées.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                        <i class="fas fa-trash me-1"></i>Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Quick Stats -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Statistiques du Compte</h6>
+            
+            <div class="row text-center mb-4">
+                <div class="col-6">
+                    <div class="h4 mb-1 text-primary">98%</div>
+                    <div class="small text-muted">Complétude</div>
+                </div>
+                <div class="col-6">
+                    <div class="h4 mb-1 text-success">A+</div>
+                    <div class="small text-muted">Sécurité</div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Profil</div>
+                    <div class="small">100%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: 100%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Sécurité</div>
+                    <div class="small">85%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-warning" style="width: 85%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Confidentialité</div>
+                    <div class="small">92%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-info" style="width: 92%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Actions Rapides</h6>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'users:profile' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-user me-2"></i>
+                    Voir le profil
+                </a>
+                <a href="{% url 'users:profile_edit' %}" class="btn btn-outline-info">
+                    <i class="fas fa-edit me-2"></i>
+                    Modifier le profil
+                </a>
+                <button class="btn btn-outline-success">
+                    <i class="fas fa-download me-2"></i>
+                    Télécharger mes données
+                </button>
+                <button class="btn btn-outline-warning">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Audit de sécurité
+                </button>
+            </div>
+        </div>
+        
+        <!-- Help & Support -->
+        <div class="progress-card">
+            <h6 class="mb-4">Aide & Support</h6>
+            
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon primary me-3" style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Centre d'aide</div>
+                            <div class="small text-muted">Guides et tutoriels</div>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="{% url 'contact' %}" class="list-group-item list-group-item-action border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon info me-3" style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Support technique</div>
+                            <div class="small text-muted">Contactez-nous</div>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="#" class="list-group-item list-group-item-action border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon success me-3" style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">FAQ</div>
+                            <div class="small text-muted">Questions fréquentes</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal changement mot de passe -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-lock me-2"></i>
+                    Changer le Mot de Passe
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="#">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-key me-2 text-warning"></i>
+                            Mot de passe actuel
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" required>
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-lock me-2 text-success"></i>
+                            Nouveau mot de passe
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" required>
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-danger" style="width: 25%"></div>
+                        </div>
+                        <small class="text-muted">Force: Faible</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-lock me-2 text-info"></i>
+                            Confirmer le mot de passe
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" required>
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Changer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal suppression compte -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Supprimer le Compte
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="#">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Attention !</strong> Cette action est définitive et irréversible.
+                    </div>
+                    <p class="mb-3">Toutes vos données seront supprimées :</p>
+                    <ul class="text-danger">
+                        <li>Historique des réservations</li>
+                        <li>Informations personnelles</li>
+                        <li>Préférences et paramètres</li>
+                        <li>Données de paiement</li>
+                    </ul>
+                    <hr>
+                    <p class="mb-2">Entrez votre mot de passe pour confirmer :</p>
+                    <div class="input-group">
+                        <input type="password" class="form-control" placeholder="Mot de passe" required>
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Supprimer Définitivement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password strength indicator
+document.querySelector('#passwordModal input[placeholder="Nouveau mot de passe"]')?.addEventListener('input', function() {
+    const password = this.value;
+    let strength = 0;
+    let strengthText = 'Très faible';
+    let strengthColor = 'bg-danger';
+    
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+    
+    const strengthBar = this.parentElement.nextElementSibling;
+    const strengthTextElement = strengthBar.nextElementSibling;
+    
+    if (strength === 1) {
+        strengthText = 'Faible';
+        strengthColor = 'bg-danger';
+        strengthBar.firstElementChild.style.width = '25%';
+    } else if (strength === 2) {
+        strengthText = 'Moyen';
+        strengthColor = 'bg-warning';
+        strengthBar.firstElementChild.style.width = '50%';
+    } else if (strength === 3) {
+        strengthText = 'Fort';
+        strengthColor = 'bg-info';
+        strengthBar.firstElementChild.style.width = '75%';
+    } else if (strength === 4) {
+        strengthText = 'Très fort';
+        strengthColor = 'bg-success';
+        strengthBar.firstElementChild.style.width = '100%';
+    }
+    
+    strengthBar.firstElementChild.className = `progress-bar ${strengthColor}`;
+    strengthTextElement.textContent = `Force: ${strengthText}`;
+});
+
+// Toggle password visibility
+document.querySelectorAll('.modal .input-group button').forEach(button => {
+    button.addEventListener('click', function() {
+        const input = this.parentElement.querySelector('input');
+        const icon = this.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+});
+
+// Form submission
+document.getElementById('preferencesForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Show success message
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong class="me-auto">Succès</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                Vos préférences ont été enregistrées avec succès !
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+});
+</script>
+{% endblock %}

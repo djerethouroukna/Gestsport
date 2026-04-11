@@ -1,0 +1,20 @@
+/* Basic custom styles for GestSport
+   Add project-specific overrides here */
+
+body {
+  padding-top: 70px; /* space for fixed navbar */
+}
+
+.hero {
+  background-size: cover;
+  background-position: center;
+}
+
+.card.shadow {
+  border: 0;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .hero { padding: 3rem 1rem; }
+}

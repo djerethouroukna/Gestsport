@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Variables Django</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Test des variables Django pour Chart.js</h1>
+    
+    <h2>Variables Python/Django :</h2>
+    <pre>
+        month_labels: {{ month_labels|default:"[]"}}
+        reservations_by_month: {{ reservations_by_month|default:"[]"}}
+        month_labels_json: {{ month_labels_json|default:"[]"}}
+        reservations_chart_data_json: {{ reservations_chart_data_json|default:"[]"}}
+    </pre>
+    
+    <h2>Test Chart.js avec variables formatées :</h2>
+    <div style="width: 600px; margin: 20px;">
+        <canvas id="testChart"></canvas>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Variables Django :');
+            console.log('month_labels:', {{ month_labels_json|safe }});
+            console.log('reservations_chart_data_json:', {{ reservations_chart_data_json|safe }});
+            
+            const testCanvas = document.getElementById('testChart');
+            if (testCanvas && typeof Chart !== 'undefined') {
+                const testCtx = testCanvas.getContext('2d');
+                new Chart(testCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ month_labels_json|safe }},
+                        datasets: [{
+                            label: 'Réservations',
+                            data: {{ reservations_chart_data_json|safe }},
+                            borderColor: '#4e73df',
+                            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                display: true
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

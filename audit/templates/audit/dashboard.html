@@ -1,0 +1,342 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Dashboard d'Audit{% endblock %}
+
+{% block extrahead %}
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #007cba;
+}
+
+.stat-card h3 {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #007cba;
+    margin: 0;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    border-bottom: 2px solid #007cba;
+    padding-bottom: 10px;
+}
+
+.log-entry {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: #666;
+    font-size: 12px;
+    min-width: 60px;
+}
+
+.log-user {
+    font-weight: bold;
+    margin: 0 10px;
+    min-width: 120px;
+}
+
+.log-action {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    margin: 0 5px;
+}
+
+.log-details {
+    color: #666;
+    font-size: 13px;
+}
+
+.badge-create { background: #28a745; color: white; }
+.badge-update { background: #17a2b8; color: white; }
+.badge-delete { background: #dc3545; color: white; }
+.badge-login { background: #007bff; color: white; }
+.badge-logout { background: #6c757d; color: white; }
+.badge-failed { background: #dc3545; color: white; }
+
+.chart-container {
+    height: 300px;
+    margin: 20px 0;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 20px 0;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>📊 Dashboard d'Audit Système</h1>
+    <p class="subtitle">Surveillance et traçabilité des actions utilisateurs</p>
+</div>
+
+<!-- Statistiques principales -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Total des Logs</h3>
+        <p class="stat-number">{{ total_logs|default:0 }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>Actions Aujourd'hui</h3>
+        <p class="stat-number">{{ today_logs|default:0 }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>Cette Semaine</h3>
+        <p class="stat-number">{{ week_logs|default:0 }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>Utilisateurs Actifs</h3>
+        <p class="stat-number">{{ active_users_today|default:0 }}</p>
+    </div>
+</div>
+
+<!-- Alertes de sécurité -->
+{% if failed_logins %}
+<div class="alert-warning">
+    <strong>⚠️ Attention:</strong> {{ failed_logins|length }} tentative(s) de connexion échouée(s) détectée(s)
+</div>
+{% endif %}
+
+<!-- Dashboard principal -->
+<div class="dashboard-grid">
+    <!-- Activité récente -->
+    <div class="card">
+        <h3>📋 Activité Récente</h3>
+        <div class="activity-list">
+            {% for log in recent_logs %}
+            <div class="log-entry">
+                <div class="log-time">{{ log.timestamp|time:"H:i" }}</div>
+                <div class="log-user">
+                    {% if log.user %}
+                        {{ log.user.email|default:log.user.username }}
+                    {% else %}
+                        Système
+                    {% endif %}
+                </div>
+                <span class="log-action badge-{{ log.action|lower }}">
+                    {{ log.get_action_display }}
+                </span>
+                <div class="log-details">
+                    {{ log.model_name }}: {{ log.object_repr|truncatechars:50 }}
+                </div>
+            </div>
+            {% empty %}
+            <p style="text-align: center; color: #666; padding: 20px;">
+                Aucune activité récente
+            </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Actions par type -->
+    <div class="card">
+        <h3>📈 Actions par Type</h3>
+        <div class="chart-container">
+            <canvas id="actionsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques détaillées -->
+<div class="dashboard-grid">
+    <!-- Modèles les plus actifs -->
+    <div class="card">
+        <h3>🏷️ Modèles les Plus Actifs</h3>
+        <div class="chart-container">
+            <canvas id="modelsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Activité par heure -->
+    <div class="card">
+        <h3>⏰ Activité par Heure (Aujourd'hui)</h3>
+        <div class="chart-container">
+            <canvas id="hourlyChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Connexions échouées -->
+{% if failed_logins %}
+<div class="card">
+    <h3>🚨 Tentatives de Connexion Échouées</h3>
+    <div class="activity-list">
+        {% for log in failed_logins %}
+        <div class="log-entry">
+            <div class="log-time">{{ log.timestamp|time:"H:i" }}</div>
+            <div class="log-user">-</div>
+            <span class="log-action badge-failed">ÉCHOUÉE</span>
+            <div class="log-details">
+                IP: {{ log.ip_address|default:"Inconnue" }}
+                {% if log.metadata.username_attempted %}
+                    | Utilisateur: {{ log.metadata.username_attempted }}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extrafooter %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Données pour les graphiques
+const actionsData = {{ actions_by_type|safe }};
+const modelsData = {{ models_by_activity|safe }};
+const hourlyData = {{ activity_by_hour|safe }};
+
+// Graphique des actions par type
+const actionsCtx = document.getElementById('actionsChart');
+if (actionsCtx) {
+    new Chart(actionsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: actionsData.map(item => item.action),
+            datasets: [{
+                data: actionsData.map(item => item.count),
+                backgroundColor: [
+                    '#28a745', '#17a2b8', '#dc3545', '#007bff', 
+                    '#6c757d', '#ffc107', '#6610f2', '#e83e8c'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Graphique des modèles par activité
+const modelsCtx = document.getElementById('modelsChart');
+if (modelsCtx) {
+    new Chart(modelsCtx, {
+        type: 'bar',
+        data: {
+            labels: modelsData.map(item => item.model_name),
+            datasets: [{
+                data: modelsData.map(item => item.count),
+                backgroundColor: '#007cba'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Graphique d'activité par heure
+const hourlyCtx = document.getElementById('hourlyChart');
+if (hourlyCtx) {
+    new Chart(hourlyCtx, {
+        type: 'line',
+        data: {
+            labels: hourlyData.map(item => item.hour + 'h'),
+            datasets: [{
+                data: hourlyData.map(item => item.count),
+                borderColor: '#007cba',
+                backgroundColor: 'rgba(0, 124, 186, 0.1)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Rafraîchissement automatique toutes les 30 secondes
+setTimeout(() => location.reload(), 30000);
+</script>
+{% endblock %}

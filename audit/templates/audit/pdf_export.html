@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Rapport d'Audit</title>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Rapport d'Audit Système</h1>
+        <p><strong>Date d'export:</strong> {{ export_date|date:"d/m/Y H:i" }}</p>
+        <p><strong>Exporté par:</strong> {{ user.get_full_name|default:user.email }}</p>
+        <p><strong>Nombre de logs:</strong> {{ total_count }}</p>
+        <hr>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date/Heure</th>
+                <th>Utilisateur</th>
+                <th>Action</th>
+                <th>Modèle</th>
+                <th>Objet</th>
+                <th>IP</th>
+                <th>Détails</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.id }}</td>
+                <td>{{ log.timestamp|date:"d/m/Y H:i" }}</td>
+                <td>
+                    {% if log.user %}
+                        {{ log.user.get_full_name|default:log.user.email }}
+                    {% else %}
+                        Système
+                    {% endif %}
+                </td>
+                <td>{{ log.get_action_display }}</td>
+                <td>{{ log.model_name }}</td>
+                <td>{{ log.object_repr|truncatechars:30 }}</td>
+                <td>{{ log.ip_address|default:"-" }}</td>
+                <td>
+                    {% if log.changes %}
+                        {% for field, change in log.changes.items %}
+                            {{ field }}: {{ change.old|default:"-" }} → {{ change.new|default:"-" }}
+                            {% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p><em>Généré par GestSport - Système d'Audit</em></p>
+        <p><small>Ce rapport contient des données sensibles. À traiter avec confidentialité.</small></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,521 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Paiement Stripe - Réservation #{{ reservation.id }}{% endblock %}
+
+{% block breadcrumb %}Paiement > Stripe{% endblock %}
+
+{% block extra_css %}
+<!-- Stripe.js -->
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+.stripe-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stripe-card-element {
+    margin: 15px 0;
+}
+
+.payment-method-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.payment-method-card:hover {
+    border-color: #007bff;
+    transform: translateY(-2px);
+}
+
+.payment-method-card.selected {
+    border-color: #007bff;
+    background: #f8f9ff;
+}
+
+.fee-display {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.processing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.processing-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="fab fa-stripe me-2 text-primary"></i>Paiement Sécurisé Stripe
+                </h5>
+                <span class="badge bg-success">Test Mode</span>
+            </div>
+
+            <!-- Récapitulatif Réservation -->
+            <div class="alert alert-info mb-4">
+                <h6 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>Récapitulatif de la Réservation
+                </h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Réservation #{{ reservation.id }}</strong><br>
+                        Terrain: {{ reservation.terrain.name }}<br>
+                        Date: {{ reservation.start_time|date:"d/m/Y" }}
+                    </div>
+                    <div class="col-md-6">
+                        Heure: {{ reservation.start_time|date:"H:i" }} - {{ reservation.end_time|date:"H:i" }}<br>
+                        Durée: {{ reservation.duration_minutes }} minutes<br>
+                        Montant: <span class="text-success">{{ reservation.total_amount }} FCFA</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Méthodes de Paiement -->
+            <div class="mb-4">
+                <h6 class="mb-3">Choisissez votre méthode de paiement</h6>
+                <div class="row" id="payment-methods">
+                    <div class="col-md-4 mb-3">
+                        <div class="card payment-method-card selected" data-method="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-credit-card fa-2x mb-2 text-primary"></i>
+                                <h6 class="card-title">Carte Bancaire</h6>
+                                <small class="text-muted">Visa, Mastercard</small>
+                                <div class="fee-display mt-2">
+                                    <small>Frais: <span id="card-fees">...</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card payment-method-card" data-method="mobile_money">
+                            <div class="card-body text-center">
+                                <i class="fas fa-mobile-alt fa-2x mb-2 text-success"></i>
+                                <h6 class="card-title">Mobile Money</h6>
+                                <small class="text-muted">Orange, MTN</small>
+                                <div class="fee-display mt-2">
+                                    <small>Frais: <span id="mobile-fees">...</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card payment-method-card" data-method="bank_transfer">
+                            <div class="card-body text-center">
+                                <i class="fas fa-university fa-2x mb-2 text-info"></i>
+                                <h6 class="card-title">Virement</h6>
+                                <small class="text-muted">Banque directe</small>
+                                <div class="fee-display mt-2">
+                                    <small>Frais: Gratuit</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulaire de Paiement -->
+            <form id="payment-form">
+                <!-- Carte Bancaire -->
+                <div id="card-payment" class="payment-section">
+                    <div class="stripe-card">
+                        <h6 class="mb-3">
+                            <i class="fas fa-lock me-2 text-success"></i>Paiement Sécurisé
+                        </h6>
+                        <div class="stripe-card-element" id="card-element">
+                            <!-- Stripe Elements insérera ici -->
+                        </div>
+                        <div id="card-errors" class="text-danger mt-2" role="alert"></div>
+                    </div>
+                </div>
+
+                <!-- Mobile Money -->
+                <div id="mobile-money-payment" class="payment-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="mb-3">Mobile Money</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Opérateur</label>
+                                <select class="form-select" id="mobile-operator">
+                                    <option value="">Choisir l'opérateur</option>
+                                    <option value="orange">Orange Money</option>
+                                    <option value="mtn">MTN Mobile Money</option>
+                                    <option value="moov">Moov Money</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Numéro de téléphone</label>
+                                <input type="tel" class="form-control" id="mobile-phone" placeholder="+221 7X XXX XXXX">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Virement Bancaire -->
+                <div id="bank-transfer-payment" class="payment-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="mb-3">Virement Bancaire</h6>
+                            <div class="alert alert-info">
+                                <strong>Coordonnées bancaires:</strong><br>
+                                Banque: BANQUE AFRICAINE<br>
+                                RIB: 12345678901234567890<br>
+                                Titre: GESTSPORT SA<br>
+                                Référence: RESERVATION-{{ reservation.id }}
+                            </div>
+                            <p class="text-muted">
+                                Après avoir effectué le virement, veuillez nous contacter pour confirmer.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons de Paiement -->
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary" id="submit-payment">
+                        <i class="fas fa-lock me-2"></i>Payer {{ reservation.total_amount }} FCFA
+                    </button>
+                    <a href="{% url 'reservations:reservation_detail' reservation.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Détails du Paiement -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">
+                <i class="fas fa-calculator me-2 text-info"></i>Détails du Paiement
+            </h6>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <span>Montant de la réservation:</span>
+                    <strong>{{ reservation.total_amount }} FCFA</strong>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <span>Frais de transaction:</span>
+                    <strong id="transaction-fees">0 FCFA</strong>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <h6>Total à payer:</h6>
+                    <h5 class="text-success" id="total-amount">{{ reservation.total_amount }} FCFA</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations de Sécurité -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-3">
+                <i class="fas fa-shield-alt me-2 text-success"></i>Sécurité
+            </h6>
+            
+            <ul class="list-unstyled">
+                <li class="mb-2">
+                    <i class="fas fa-check text-success me-2"></i>
+                    Paiement crypté SSL/TLS
+                </li>
+                <li class="mb-2">
+                    <i class="fas fa-check text-success me-2"></i>
+                    Conformité PCI DSS
+                </li>
+                <li class="mb-2">
+                    <i class="fas fa-check text-success me-2"></i>
+                    3D Secure activé
+                </li>
+                <li class="mb-2">
+                    <i class="fas fa-check text-success me-2"></i>
+                    Remboursement garanti
+                </li>
+            </ul>
+        </div>
+
+        <!-- Support -->
+        <div class="progress-card">
+            <h6 class="mb-3">
+                <i class="fas fa-headset me-2 text-warning"></i>Support
+            </h6>
+            
+            <p class="small text-muted">
+                Besoin d'aide pour votre paiement ? Contactez notre support:
+            </p>
+            
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-phone me-1"></i>Appeler
+                </button>
+                <button class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-whatsapp me-1"></i>WhatsApp
+                </button>
+                <button class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-envelope me-1"></i>Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay de traitement -->
+<div class="processing-overlay" id="processing-overlay">
+    <div class="processing-content">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Traitement...</span>
+        </div>
+        <h5>Traitement du paiement...</h5>
+        <p class="text-muted">Veuillez patienter, nous traitons votre paiement en toute sécurité.</p>
+    </div>
+</div>
+
+<script>
+// Configuration Stripe
+const stripe = Stripe('{{ STRIPE_PUBLISHABLE_KEY }}');
+let elements;
+let clientSecret = null;
+let selectedMethod = 'card';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser les méthodes de paiement
+    initializePaymentMethods();
+    
+    // Créer le Payment Intent
+    createPaymentIntent();
+    
+    // Écouteurs d'événements
+    setupEventListeners();
+});
+
+function initializePaymentMethods() {
+    // Sélection des méthodes de paiement
+    document.querySelectorAll('.payment-method-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.payment-method-card').forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            selectedMethod = this.dataset.method;
+            showPaymentSection(selectedMethod);
+            updateFees();
+        });
+    });
+    
+    // Charger les frais
+    loadFees();
+}
+
+function showPaymentSection(method) {
+    document.querySelectorAll('.payment-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    if (method === 'card') {
+        document.getElementById('card-payment').style.display = 'block';
+    } else if (method === 'mobile_money') {
+        document.getElementById('mobile-money-payment').style.display = 'block';
+    } else if (method === 'bank_transfer') {
+        document.getElementById('bank-transfer-payment').style.display = 'block';
+    }
+}
+
+function createPaymentIntent() {
+    fetch(`/api/payments/stripe/intent/{{ reservation.id }}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            clientSecret = data.client_secret;
+            setupStripeElements();
+        } else {
+            showError('Erreur lors de la création du paiement: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showError('Erreur technique lors de la création du paiement');
+    });
+}
+
+function setupStripeElements() {
+    if (clientSecret) {
+        elements = stripe.elements({
+            clientSecret: clientSecret,
+            appearance: {
+                theme: 'stripe',
+                variables: {
+                    colorPrimary: '#007bff',
+                    colorBackground: '#ffffff',
+                    colorText: '#333333',
+                }
+            }
+        });
+
+        const paymentElement = elements.create('payment');
+        paymentElement.mount('#card-element');
+
+        paymentElement.on('change', function(event) {
+            if (event.error) {
+                document.getElementById('card-errors').textContent = event.error.message;
+            } else {
+                document.getElementById('card-errors').textContent = '';
+            }
+        });
+    }
+}
+
+function setupEventListeners() {
+    // Soumission du formulaire
+    document.getElementById('payment-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        processPayment();
+    });
+}
+
+function processPayment() {
+    if (selectedMethod === 'card') {
+        processCardPayment();
+    } else if (selectedMethod === 'mobile_money') {
+        processMobileMoneyPayment();
+    } else if (selectedMethod === 'bank_transfer') {
+        processBankTransfer();
+    }
+}
+
+function processCardPayment() {
+    showProcessing(true);
+    
+    stripe.confirmPayment({
+        elements,
+        confirmParams: {
+            return_url: window.location.origin + `/api/payments/stripe/success/{{ reservation.id }}/`,
+        },
+    })
+    .then(function(result) {
+        showProcessing(false);
+        
+        if (result.error) {
+            showError(result.error.message);
+        } else {
+            // Le paiement a réussi, redirection automatique
+            console.log('Paiement réussi');
+        }
+    });
+}
+
+function processMobileMoneyPayment() {
+    const operator = document.getElementById('mobile-operator').value;
+    const phone = document.getElementById('mobile-phone').value;
+    
+    if (!operator || !phone) {
+        showError('Veuillez remplir tous les champs');
+        return;
+    }
+    
+    showProcessing(true);
+    
+    // Simuler le traitement Mobile Money
+    setTimeout(() => {
+        showProcessing(false);
+        // Rediriger vers la page de succès
+        window.location.href = `/api/payments/stripe/success/{{ reservation.id }}/`;
+    }, 3000);
+}
+
+function processBankTransfer() {
+    // Afficher les instructions pour le virement
+    alert('Veuillez effectuer le virement et nous contacter pour confirmer.');
+}
+
+function loadFees() {
+    fetch(`/api/payments/stripe/fees/?amount={{ reservation.total_amount }}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('card-fees').textContent = data.fees.card.toFixed(2) + ' FCFA';
+            document.getElementById('mobile-fees').textContent = data.fees.mobile_money.toFixed(2) + ' FCFA';
+        }
+    });
+}
+
+function updateFees() {
+    const amount = {{ reservation.total_amount }};
+    let fees = 0;
+    
+    if (selectedMethod === 'card') {
+        // Simuler les frais carte (2.9% + 30 FCFA)
+        fees = amount * 0.029 + 30;
+    } else if (selectedMethod === 'mobile_money') {
+        // Simuler les frais mobile money (1.5%)
+        fees = amount * 0.015;
+    }
+    
+    document.getElementById('transaction-fees').textContent = fees.toFixed(2) + ' FCFA';
+    document.getElementById('total-amount').textContent = (amount + fees).toFixed(2) + ' FCFA';
+}
+
+function showProcessing(show) {
+    document.getElementById('processing-overlay').style.display = show ? 'flex' : 'none';
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('card-errors');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 5000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,637 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}{% if terrain %}Modifier le terrain{% else %}Créer un terrain{% endif %} - GestSport{% endblock %}
+
+{% block breadcrumb %}{% if terrain %}Modifier{% else %}Créer{% endif %} un terrain{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        
+                        {% if terrain %}Modifier le terrain{% else %}Ajouter un nouveau Terrain{% endif %}
+                    </h2>
+                    
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'terrains:terrain_list' %}" class="btn btn-info">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Retour
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Form Card -->
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" id="resetBtn">
+                        <i class="fas fa-undo me-1"></i>Réinitialiser
+                    </button>
+                </div>
+            </div>
+            
+            {% if error %}
+            <div class="alert alert-danger mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <form method="post" enctype="multipart/form-data" id="terrainForm">
+                {% csrf_token %}
+                
+                <!-- Basic Information -->
+                <div class="mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">
+                               
+                                Nom du terrain 
+                            </label>
+                            <input type="text" name="name" class="form-control" 
+                                   value="{% if form_data.name %}{{ form_data.name }}{% elif terrain %}{{ terrain.name }}{% endif %}" 
+                                   placeholder="Entrez le nom du terrain" required>
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">
+                               
+                                Description
+                            </label>
+                            <textarea name="description" class="form-control" rows="4" 
+                                      placeholder="Décrivez le terrain, ses caractéristiques, équipements...">{% if form_data.description %}{{ form_data.description }}{% elif terrain %}{{ terrain.description }}{% endif %}</textarea>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                
+                                Type de terrain 
+                            </label>
+                            <select name="terrain_type" class="form-select" required>
+                                <option value="">Sélectionnez un type</option>
+                                {% for key, label in terrain_types %}
+                                <option value="{{ key }}" 
+                                        {% if terrain and terrain.terrain_type == key or request.POST.terrain_type == key %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                
+                                Capacité 
+                            </label>
+                            <input type="number" name="capacity" class="form-control" 
+                                   value="{% if form_data.capacity %}{{ form_data.capacity }}{% elif terrain %}{{ terrain.capacity }}{% endif %}" 
+                                   placeholder="Nombre de personnes" required>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                
+                                Prix / heure 
+                            </label>
+                            <input type="number" step="0.01" name="price_per_hour" class="form-control" 
+                                   value="{% if form_data.price_per_hour %}{{ form_data.price_per_hour }}{% elif terrain %}{{ terrain.price_per_hour }}{% endif %}" 
+                                   placeholder=" F CFA/heure" required>
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">
+                                
+                                Statut
+                            </label>
+                            <select name="status" class="form-select">
+                                {% for key,label in status_choices %}
+                                <option value="{{ key }}" 
+                                        {% if terrain and terrain.status == key or request.POST.status == key %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photos Section -->
+                <div class="mb-4">
+                    <h6 class="mb-3">
+                        
+                        Photos (max 5)
+                    </h6>
+                    
+                    {% if terrain and photos %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-warning">
+                            
+                            Photos existe à supprimer
+                        </label>
+                        {% for p in photos %}
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="social-icon primary me-3" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="delete_photos" value="{{ p.id }}" id="del{{ p.id }}">
+                                    <label class="form-check-label" for="del{{ p.id }}">
+                                        {{ p.caption|default:"Photo " }}{{ forloop.counter }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        
+                        <input type="file" name="photos" accept="image/*" multiple class="form-control">
+                        <small class="text-muted">Formats acceptés : JPG, PNG, GIF. Max 5 photos.</small>
+                    </div>
+                </div>
+                
+                <!-- Location Section -->
+                <div class="mb-4">
+                    <h6 class="mb-3">
+                        <i class="fas fa-map-marker-alt me-2 text-info"></i>
+                        Localisation 
+                    </h6>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                
+                                Latitude
+                            </label>
+                            <input type="number" step="0.000001" name="latitude" class="form-control" 
+                                   placeholder="48.8566" 
+                                   value="{% if form_data.latitude %}{{ form_data.latitude }}{% elif terrain and terrain.latitude %}{{ terrain.latitude }}{% endif %}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                             
+                                Longitude
+                            </label>
+                            <input type="number" step="0.000001" name="longitude" class="form-control" 
+                                   placeholder="2.3522" 
+                                   value="{% if form_data.longitude %}{{ form_data.longitude }}{% elif terrain and terrain.longitude %}{{ terrain.longitude }}{% endif %}">
+                        </div>
+                    </div>
+                    <!-- DMS Converter 
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-exchange-alt me-2 text-warning"></i>
+                            Convertisseur DMS → décimal
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="dms_input" class="form-control" 
+                                   placeholder='12°03\'09" N, 15°09\'26" E'>
+                            <button type="button" id="dms_convert" class="btn btn-outline-primary">
+                                <i class="fas fa-sync me-1"></i>Convertir
+                            </button>
+                        </div>
+                        <div id="dms_error" class="form-text text-danger mt-1" style="display:none;"></div>
+                    </div>-->
+                </div>
+                
+                <!-- Map 
+                <div class="mb-4">
+                    <h6 class="mb-3">
+                        <i class="fas fa-map me-2 text-info"></i>
+                        Sélection sur la carte
+                    </h6>
+                    
+                    {% if terrain and terrain.latitude and terrain.longitude %}
+                    <div id="pickMap" style="height: 300px; width: 100%; border-radius: 0.5rem;"></div>
+                    {% else %}
+                    <div id="pickMapContainer" style="display:none;">
+                        <div id="pickMap" style="height: 300px; width: 100%; border-radius: 0.5rem;"></div>
+                    </div>
+                    {% endif %}
+                </div>-->
+                
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-save me-2"></i>
+                            {% if terrain %}Enregistrer les modifications{% else %}Ajouter le terrain{% endif %}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="cancelBtn">
+                            <i class="fas fa-times me-2"></i>
+                            Annuler
+                        </button>
+                    </div>
+                    <div class="small text-muted">
+                        
+                        Champs obligatoires
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Quick Tips -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">
+                <i class="fas fa-lightbulb me-2 text-warning"></i>
+                Conseils sur formulaire
+            </h6>
+            
+            <div class="list-group list-group-flush">
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-start">
+                        <div class="social-icon primary me-3" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Photos de qualité</div>
+                            <div class="small text-muted">Ajoutez des photos claires pour attirer plus de Utilisateurs</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-start">
+                        <div class="social-icon success me-3" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Localisation précise</div>
+                            <div class="small text-muted">Une localisation correcte aide les utilisateurs à trouver facilement un terrain</div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+            </div>
+        </div>
+        
+        <!-- Form Progress -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">
+                <i class="fas fa-tasks me-2 text-info"></i>
+                Progression du formulaire
+            </h6>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Informations de base</div>
+                    <div class="small" id="basicProgress">0%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" id="basicProgressBar" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Photos</div>
+                    <div class="small" id="photoProgress">0%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" id="photoProgressBar" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Localisation</div>
+                    <div class="small" id="locationProgress">0%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-warning" id="locationProgressBar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity 
+        <div class="progress-card">
+            <h6 class="mb-4">
+                <i class="fas fa-history me-2 text-primary"></i>
+                Activité récente
+            </h6>
+            
+            <div class="list-group list-group-flush">
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon primary me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Nouveau terrain</div>
+                            <div class="small text-muted">Il y a 2 heures</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon success me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Modification terrain</div>
+                            <div class="small text-muted">Il y a 5 heures</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon warning me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Photos ajoutées</div>
+                            <div class="small text-muted">Il y a 1 jour</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>-->
+
+<!-- Leaflet pour la sélection de position -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-sA+e2mQV2kYpG7oxfZx93fz4XnqKeqv3Y6z6G/9gS2M=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-o9N1j3s9M6w3J4b4mP6s6ZQ1l2jvU9gqv1b6J4fC8dM=" crossorigin=""></script>
+
+<script>
+// Form progress tracking
+function updateFormProgress() {
+    const form = document.getElementById('terrainForm');
+    if (!form) return;
+    
+    // Basic info progress
+    const nameInput = form.querySelector('input[name="name"]');
+    const descInput = form.querySelector('textarea[name="description"]');
+    const typeInput = form.querySelector('select[name="terrain_type"]');
+    const capacityInput = form.querySelector('input[name="capacity"]');
+    const priceInput = form.querySelector('input[name="price_per_hour"]');
+    
+    let basicFields = 0;
+    let basicFilled = 0;
+    
+    [nameInput, typeInput, capacityInput, priceInput].forEach(input => {
+        if (input) {
+            basicFields++;
+            if (input.value.trim()) basicFilled++;
+        }
+    });
+    
+    const basicProgress = basicFields > 0 ? Math.round((basicFilled / basicFields) * 100) : 0;
+    document.getElementById('basicProgress').textContent = basicProgress + '%';
+    document.getElementById('basicProgressBar').style.width = basicProgress + '%';
+    
+    // Photo progress
+    const photoInput = form.querySelector('input[name="photos"]');
+    const deleteCheckboxes = form.querySelectorAll('input[name="delete_photos"]');
+    let photoProgress = 0;
+    
+    if (photoInput && photoInput.files.length > 0) {
+        photoProgress = Math.min(100, photoInput.files.length * 20);
+    } else if (deleteCheckboxes.length > 0) {
+        photoProgress = 50; // Some photos exist
+    }
+    
+    document.getElementById('photoProgress').textContent = photoProgress + '%';
+    document.getElementById('photoProgressBar').style.width = photoProgress + '%';
+    
+    // Location progress
+    const latInput = form.querySelector('input[name="latitude"]');
+    const lngInput = form.querySelector('input[name="longitude"]');
+    let locationProgress = 0;
+    
+    if (latInput && lngInput && latInput.value && lngInput.value) {
+        locationProgress = 100;
+    }
+    
+    document.getElementById('locationProgress').textContent = locationProgress + '%';
+    document.getElementById('locationProgressBar').style.width = locationProgress + '%';
+}
+
+// Initialize map
+(function(){
+    function initMap(){
+        var latInput = document.querySelector('input[name="latitude"]');
+        var lngInput = document.querySelector('input[name="longitude"]');
+        var lat = parseFloat(latInput.value) || 48.8566;
+        var lng = parseFloat(lngInput.value) || 2.3522;
+        var map = L.map('pickMap').setView([lat, lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        var marker;
+        if(latInput.value && lngInput.value){
+            marker = L.marker([lat, lng]).addTo(map);
+            map.setView([lat, lng], 15);
+        }
+
+        map.on('click', function(e){
+            var plat = e.latlng.lat.toFixed(6);
+            var plng = e.latlng.lng.toFixed(6);
+            latInput.value = plat;
+            lngInput.value = plng;
+            if(marker){ marker.setLatLng([plat, plng]); } else { marker = L.marker([plat,plng]).addTo(map); }
+            updateFormProgress();
+        });
+    }
+
+    var c = document.getElementById('pickMapContainer');
+    if(c){ c.style.display = 'block'; }
+    setTimeout(function(){ if(document.getElementById('pickMap')) initMap(); }, 250);
+})();
+
+// DMS Converter
+(function(){
+    function parseDMS(s){
+        if(!s) throw new Error('Champ vide');
+        var str = String(s).trim();
+        // Normalize characters
+        str = str.replace(/[']]/g, "'").replace(/\u201D|\u201C/g, '"').replace(/[°º]/g,'°');
+        // Simple decimal (with optional hemisphere)
+        var simple = str.match(/^\s*([+-]?\d+(?:[\.,]\d+)?)\s*([NSEW])?\s*$/i);
+        if(simple){
+            var val = parseFloat(simple[1].replace(',', '.'));
+            var hemi = simple[2];
+            if(hemi){ hemi = hemi.toUpperCase(); if(hemi=='S' || hemi=='W') val = -Math.abs(val); }
+            return Number(val.toFixed(6));
+        }
+        // DMS full: 12°03'09" N
+        var m = str.match(/(\d+)[°\s]+(\d+)[\'\s]+(\d+(?:\.\d+)?)[\"\s]*([NSEW])?/i);
+        if(m){
+            var deg = parseFloat(m[1]); var min = parseFloat(m[2]||0); var sec = parseFloat(m[3]||0); var hemi = (m[4]||'').toUpperCase();
+            var val = deg + (min||0)/60 + (sec||0)/3600;
+            if(hemi=='S' || hemi=='W') val = -val;
+            return Number(val.toFixed(6));
+        }
+        // DMS deg/min: 12°03' N
+        var m2 = str.match(/(\d+)[°\s]+(\d+(?:\.\d+)?)[\'\s]*([NSEW])?/i);
+        if(m2){
+            var deg = parseFloat(m2[1]); var min = parseFloat(m2[2]||0); var hemi = (m2[3]||'').toUpperCase();
+            var val = deg + (min||0)/60;
+            if(hemi=='S' || hemi=='W') val = -val;
+            return Number(val.toFixed(6));
+        }
+        // space separated numbers
+        var parts = str.split(/[;,\s]+/).filter(Boolean);
+        if(parts.length>=3){
+            var deg = parseFloat(parts[0]); var min = parseFloat(parts[1]); var sec = parseFloat(parts[2].replace(/[NSEW]/i,''));
+            var hemi = (parts[2].match(/[NSEW]/i)||[])[0]; if(hemi) hemi = hemi.toUpperCase();
+            var val = deg + (min||0)/60 + (sec||0)/3600; if(hemi=='S' || hemi=='W') val = -val;
+            return Number(val.toFixed(6));
+        }
+        throw new Error('Format DMS non reconnu');
+    }
+
+    function tryConvertFields(){
+        var latInput = document.querySelector('input[name="latitude"]');
+        var lngInput = document.querySelector('input[name="longitude"]');
+        var dmsInput = document.getElementById('dms_input');
+        var errEl = document.getElementById('dms_error');
+        if(errEl){ errEl.style.display='none'; errEl.textContent=''; }
+
+        if(dmsInput && dmsInput.value.trim()){
+            var parts = dmsInput.value.split(',');
+            if(parts.length < 2) throw new Error('Séparez latitude et longitude par une virgule.');
+            var lat = parseDMS(parts[0]);
+            var lng = parseDMS(parts[1]);
+            latInput.value = lat;
+            lngInput.value = lng;
+            return;
+        }
+        // If individual inputs contain DMS, convert them
+        if(/[°'"NSEW]/i.test(latInput.value)){
+            latInput.value = parseDMS(latInput.value);
+        }
+        if(/[°'"NSEW]/i.test(lngInput.value)){
+            lngInput.value = parseDMS(lngInput.value);
+        }
+    }
+
+    var btn = document.getElementById('dms_convert');
+    if(btn){ btn.addEventListener('click', function(){
+        try{ 
+            tryConvertFields(); 
+            updateFormProgress();
+            showToast('Conversion réussie', 'success');
+        } catch(e){ 
+            var el=document.getElementById('dms_error'); 
+            if(el){ 
+                el.style.display='block'; 
+                el.textContent=e.message; 
+            } 
+        }
+    }); }
+
+    // Convert before form submit
+    var form = document.querySelector('form[method="post"]');
+    if(form){
+        form.addEventListener('submit', function(e){
+            try{
+                tryConvertFields();
+            }catch(err){
+                e.preventDefault();
+                var el=document.getElementById('dms_error'); 
+                if(el){ 
+                    el.style.display='block'; 
+                    el.textContent=err.message; 
+                    el.scrollIntoView({behavior:'smooth', block:'center'}); 
+                }
+            }
+        });
+    }
+})();
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    
+    const bgClass = type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info';
+    
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header ${bgClass} text-white">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Update progress on input changes
+    const form = document.getElementById('terrainForm');
+    if (form) {
+        form.addEventListener('input', updateFormProgress);
+        form.addEventListener('change', updateFormProgress);
+        updateFormProgress(); // Initial update
+    }
+    
+    // Preview button
+    document.getElementById('previewBtn')?.addEventListener('click', function() {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-info text-white">
+                    <i class="fas fa-eye me-2"></i>
+                    <strong class="me-auto">Aperçu</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    Fonctionnalité d'aperçu bientôt disponible
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    });
+    
+    // Reset button
+    document.getElementById('resetBtn')?.addEventListener('click', function() {
+        if (confirm('Êtes-vous sûr de vouloir réinitialiser le formulaire ?')) {
+            form.reset();
+            updateFormProgress();
+        }
+    });
+    
+    // Cancel button
+    document.getElementById('cancelBtn')?.addEventListener('click', function() {
+        window.location.href = '{% if terrain %}{% url "terrains:terrain_detail" terrain.id %}{% else %}{% url "terrains:terrain_list" %}{% endif %}';
+    });
+});
+</script>
+{% endblock %}

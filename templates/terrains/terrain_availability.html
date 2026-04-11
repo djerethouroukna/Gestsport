@@ -1,0 +1,568 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}Disponibilité - {{ terrain.name }}{% endblock %}
+
+{% block breadcrumb %}Disponibilité - {{ terrain.name }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        
+                        Disponibilité - {{ terrain.name }}
+                    </h2>
+                    
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group-sm">
+                        <a href="{% url 'terrains:terrain_list' %}" class="btn btn-info">
+                            
+                            Retour au Liste
+                        </a>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2>{{ terrain.capacity }} pers.</h2>
+                
+            </div>
+            <div class="card-bottom">
+                <p>+5.3% performance</p>
+                <canvas id="capacityChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2>{{ terrain.price_per_hour }}F CFA</h2>
+                
+            </div>
+            <div class="card-bottom">
+                <p>+2.1% performance</p>
+                <canvas id="priceChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                <h2>{{ terrain.get_terrain_type_display }}</h2>
+                
+            </div>
+            <div class="card-bottom">
+                <p>+8.7% performance</p>
+                <canvas id="typeChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar -->
+<div class="progress-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="mb-0">
+            
+            Calendrier de Disponibilité
+            
+        </h6>
+        <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-info" id="refreshAvailabilityBtn">
+                <i class="fas fa-sync me-1"></i>
+                Actualiser
+            </button>
+            <button class="btn btn-outline-success" id="todayBtn">
+                <i class="fas fa-calendar-day me-1"></i>
+                Aujourd'hui
+            </button>
+        </div>
+    </div>
+    
+    <div id="availabilityCalendar" class="availability-calendar">
+        <!-- Le calendrier sera généré par JavaScript -->
+    </div>
+</div>
+
+<!-- Quick Reservation 
+<div class="progress-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="mb-0">
+            <i class="fas fa-calendar-check me-2 text-success"></i>
+            Réservation Rapide
+        </h6>
+    </div>
+    
+    <form id="quickReservationForm">
+        <input type="hidden" name="terrain" value="{{ terrain.id }}">
+        
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                    <i class="fas fa-calendar me-2 text-primary"></i>
+                    Date
+                </label>
+                <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                    <i class="fas fa-clock me-2 text-info"></i>
+                    Créneau
+                </label>
+                <select name="time_slot" class="form-control" required>
+                    <option value="">Choisir un créneau</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                    <i class="fas fa-users me-2 text-warning"></i>
+                    Participants
+                </label>
+                <input type="number" name="participants" class="form-control" min="1" max="{{ terrain.capacity }}" value="1" required>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            {% if user.is_authenticated %}
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-calendar-plus me-2"></i>
+                Réserver maintenant
+            </button>
+            {% else %}
+            <a href="{% url 'login' %}" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                Se connecter pour réserver
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>-->
+
+<!-- Recent Reservations -->
+<div class="progress-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="mb-0">
+            
+            Réservations Récentes
+            <span class="badge bg-secondary ms-2">{{ reservations|length }}</span>
+        </h6>
+    </div>
+    
+    {% if reservations %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Créneau</th>
+                    <th>Utilisateur</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                <tr>
+                    <td>{{ reservation.start_time|date:"d/m/Y" }}</td>
+                    <td>{{ reservation.start_time|date:"H:i" }} - {{ reservation.end_time|date:"H:i" }}</td>
+                    <td>{{ reservation.user.get_full_name|default:reservation.user.email }}</td>
+                    <td>
+                        <span class="badge {% if reservation.status == 'confirmed' %}bg-success{% elif reservation.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">
+                            {{ reservation.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4">
+        <div class="social-icon info mb-3" style="width: 50px; height: 50px; font-size: 1.2rem; margin: 0 auto;">
+            <i class="fas fa-calendar-times"></i>
+        </div>
+        <p class="text-muted">Aucune réservation pour les 30 prochains jours.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Données de disponibilité
+const availabilityData = {{ availability|safe }};
+const terrainId = {{ terrain.id }};
+
+// Initialiser le calendrier
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCalendar();
+    setupEventListeners();
+});
+
+function initializeCalendar() {
+    const calendar = document.getElementById('availabilityCalendar');
+    const today = new Date('{{ today }}');
+    
+    let calendarHTML = '<div class="calendar-grid">';
+    
+    // En-têtes des jours
+    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    calendarHTML += '<div class="calendar-headers">';
+    for (let day of days) {
+        calendarHTML += `<div class="calendar-header">${day}</div>`;
+    }
+    calendarHTML += '</div>';
+    
+    // Générer les jours du mois
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // Jours vides avant le premier jour
+    for (let i = 0; i < firstDay; i++) {
+        calendarHTML += '<div class="calendar-day empty"></div>';
+    }
+    
+    // Jours du mois
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentYear, currentMonth, day);
+        const dateStr = date.toISOString().split('T')[0];
+        const availability = availabilityData[dateStr];
+        
+        let statusClass = 'available';
+        let statusIcon = 'fa-check-circle';
+        let tooltip = 'Disponible';
+        
+        if (availability) {
+            if (availability.status === 'full') {
+                statusClass = 'full';
+                statusIcon = 'fa-times-circle';
+                tooltip = 'Complet';
+            } else if (availability.status === 'partial') {
+                statusClass = 'partial';
+                statusIcon = 'fa-clock';
+                tooltip = availability.message;
+            }
+        }
+        
+        // Mettre en évidence aujourd'hui
+        const isToday = date.toDateString() === today.toDateString();
+        const todayClass = isToday ? 'today' : '';
+        
+        calendarHTML += `
+            <div class="calendar-day ${statusClass} ${todayClass}" 
+                 data-date="${dateStr}" 
+                 title="${tooltip}"
+                 onclick="selectDate('${dateStr}')">
+                <div class="day-number">${day}</div>
+                <div class="day-status">
+                    <i class="fas ${statusIcon}"></i>
+                </div>
+            </div>
+        `;
+    }
+    
+    calendarHTML += '</div>';
+    calendar.innerHTML = calendarHTML;
+}
+
+function setupEventListeners() {
+    // Bouton d'actualisation
+    document.getElementById('refreshAvailabilityBtn').addEventListener('click', refreshAvailability);
+    
+    // Bouton "Aujourd'hui"
+    document.getElementById('todayBtn').addEventListener('click', function() {
+        document.querySelector('[data-date="{{ today }}"]').scrollIntoView({ behavior: 'smooth' });
+    });
+    
+    // Formulaire de réservation rapide
+    document.getElementById('quickReservationForm').addEventListener('submit', handleQuickReservation);
+}
+
+function selectDate(dateStr) {
+    const availability = availabilityData[dateStr];
+    const timeSlotSelect = document.querySelector('select[name="time_slot"]');
+    const dateInput = document.querySelector('input[name="date"]');
+    
+    // Mettre à jour la date
+    dateInput.value = dateStr;
+    
+    // Mettre à jour les créneaux disponibles
+    timeSlotSelect.innerHTML = '<option value="">Choisir un créneau</option>';
+    
+    if (availability && availability.slots && availability.slots.length > 0) {
+        availability.slots.forEach(slot => {
+            const option = document.createElement('option');
+            option.value = slot;
+            option.textContent = slot;
+            timeSlotSelect.appendChild(option);
+        });
+    }
+    
+    // Mettre en évidence la date sélectionnée
+    document.querySelectorAll('.calendar-day').forEach(day => {
+        day.classList.remove('selected');
+    });
+    document.querySelector(`[data-date="${dateStr}"]`).classList.add('selected');
+}
+
+function refreshAvailability() {
+    const btn = document.getElementById('refreshAvailabilityBtn');
+    const originalHTML = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Actualisation...';
+    btn.disabled = true;
+    
+    fetch(`/terrains/${terrainId}/availability/`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            showToast('Erreur lors de l\'actualisation', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Erreur réseau', 'danger');
+    })
+    .finally(() => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    });
+}
+
+function handleQuickReservation(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const date = formData.get('date');
+    const timeSlot = formData.get('time_slot');
+    
+    if (!date || !timeSlot) {
+        showToast('Veuillez choisir une date et un créneau', 'warning');
+        return;
+    }
+    
+    // Parser le créneau horaire
+    const [startTime, endTime] = timeSlot.split('-');
+    
+    // Rediriger vers la page de réservation avec les paramètres pré-remplis
+    const url = `{% url 'reservations:reservation_create' %}?terrain=${terrainId}&date=${date}&start_time=${startTime}&end_time=${endTime}`;
+    window.location.href = url;
+}
+
+// Fonction pour afficher les notifications
+function showToast(message, type = 'info') {
+    // Créer un toast simple
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-suppression après 5 secondes
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+</script>
+
+<style>
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #e9ecef;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.calendar-header {
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.calendar-day {
+    background: white;
+    min-height: 80px;
+    padding: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.calendar-day.empty {
+    background: #f8f9fa;
+    cursor: default;
+}
+
+.calendar-day.today {
+    background: #e3f2fd;
+    border: 2px solid #2196f3;
+}
+
+.calendar-day.selected {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+}
+
+.calendar-day.available {
+    border-left: 4px solid #28a745;
+}
+
+.calendar-day.partial {
+    border-left: 4px solid #ffc107;
+}
+
+.calendar-day.full {
+    border-left: 4px solid #dc3545;
+    opacity: 0.7;
+}
+
+.day-number {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.day-status {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 0.8rem;
+}
+
+.calendar-day.available .day-status {
+    color: #28a745;
+}
+
+.calendar-day.partial .day-status {
+    color: #ffc107;
+}
+
+.calendar-day.full .day-status {
+    color: #dc3545;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% load static %}
+<footer class="bg-dark text-white mt-5 py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- À propos -->
+            <div class="col-md-3">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-futbol me-2 text-warning"></i>GestSport
+                </h6>
+                <p class="small text-muted">Plateforme de gestion et réservation de terrains sportifs en ligne.</p>
+            </div>
+            
+            <!-- Liens rapides -->
+            <div class="col-md-3">
+                <h6 class="fw-bold mb-3">Navigation</h6>
+                <ul class="list-unstyled small">
+                    <li><a href="{% url 'home' %}" class="text-muted text-decoration-none"></a></li>
+                    <li><a href="{% url 'terrains:terrain_list' %}" class="text-muted text-decoration-none">Terrains</a></li>
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url 'reservations:reservation_list' %}" class="text-muted text-decoration-none">Réservations</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <!-- Contact -->
+            <div class="col-md-3">
+                <h6 class="fw-bold mb-3">Contact</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="fas fa-envelope me-2"></i>contact@gestsport.com</li>
+                    <li><i class="fas fa-phone me-2"></i>+235 63205512</li>
+                    <li><i class="fas fa-map-marker-alt me-2"></i>Tchad</li>
+                </ul>
+            </div>
+            
+            <!-- Réseaux sociaux -->
+            <div class="col-md-3">
+                <h6 class="fw-bold mb-3">Suivez-nous</h6>
+                <div class="d-flex gap-2">
+                    <a href="#" class="btn btn-outline-light btn-sm rounded-circle">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-light btn-sm rounded-circle">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-light btn-sm rounded-circle">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Copyright -->
+        <hr class="bg-secondary">
+        <div class="text-center text-muted small">
+            <p class="mb-0">&copy; 2025 GestSport. Tous droits réservés.</p>
+        </div>
+    </div>
+</footer>

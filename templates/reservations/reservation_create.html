@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nouvelle Réservation - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{% url 'reservations:reservation_list' %}" class="btn btn-outline-secondary btn-sm mb-3">
+                <i class="fas fa-arrow-left me-1"></i>Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        
+                        Créer une Réservation
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" id="reservationForm" class="form">
+                        {% csrf_token %}
+                        
+                        <!-- Sélection terrain -->
+                        <div class="mb-4">
+                            <label for="terrainSelect" class="form-label fw-bold">Terrain  ({{ terrains.count }} disponible(s))</label>
+                            <select class="form-select form-select-lg" name="terrain" id="terrainSelect" required>
+                                <option value="">-- Sélectionnez un terrain --</option>
+                                {% for t in terrains %}
+                                    <option value="{{ t.id }}" data-price="{{ t.price_per_hour }}">
+                                        {{ t.name }} ({{ t.get_terrain_type_display }}) - {{ t.price_per_hour }}FCFA/h
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Date et heure -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="startTime" class="form-label fw-bold">Début </label>
+                                <input type="datetime-local" class="form-control form-control-lg" name="start_time" id="startTime" required>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="endTime" class="form-label fw-bold">Fin </label>
+                                <input type="datetime-local" class="form-control form-control-lg" name="end_time" id="endTime" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label fw-bold">Notes (optionnel)</label>
+                            <textarea class="form-control" name="notes" id="notes" rows="3" placeholder="Informations supplémentaires..."></textarea>
+                        </div>
+                        
+                        <!-- Résumé -->
+                        <div class="alert alert-light border mb-4">
+                            <h6 class="fw-bold mb-3">Résumé de la Réservation</h6>
+                            <table class="table table-sm mb-0">
+                                <tr>
+                                    <td>Terrain :</td>
+                                    <td id="summaryTerrain" class="text-muted">-</td>
+                                </tr>
+                                <tr>
+                                    <td>Date :</td>
+                                    <td id="summaryDate" class="text-muted">-</td>
+                                </tr>
+                                <tr>
+                                    <td>Durée :</td>
+                                    <td id="summaryDuration" class="text-muted">-</td>
+                                </tr>
+                                <tr>
+                                    <td>Prix/h :</td>
+                                    <td id="summaryPrice" class="text-muted">-</td>
+                                </tr>
+                                <tr class="fw-bold border-top">
+                                    <td>Total estimé :</td>
+                                    <td id="summaryTotal" class="text-muted">-</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <button type="button" class="btn btn-outline-secondary me-2" id="checkAvailabilityBtn">Vérifier disponibilité</button>
+                                <button type="submit" class="btn btn-primary btn-lg" id="createAndPay">
+                                    <i class="fas fa-credit-card me-2"></i>Créer & Payer
+                                </button>
+                                <a href="{% url 'reservations:reservation_list' %}" class="btn btn-outline-secondary ms-2">Annuler</a>
+                            </div>
+                            <div id="availabilityResult" class="text-end"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="fw-bold">Informations</h6>
+                    <p class="text-muted small mb-0">Sélectionnez un terrain et des dates/horaires valides. Après la création, vous serez redirigé vers la page de paiement pour finaliser la réservation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    function parseDateInput(v){
+        return v ? new Date(v) : null;
+    }
+    function computeDurationHours(start, end){
+        if(!start || !end) return 0;
+        var ms = end - start;
+        return Math.max(0, ms/1000/3600);
+    }
+
+    var terrainSelect = document.getElementById('terrainSelect');
+    var startInput = document.getElementById('startTime');
+    var endInput = document.getElementById('endTime');
+
+    function updateSummary(){
+        var terrainOpt = terrainSelect.options[terrainSelect.selectedIndex];
+        var terrainText = terrainOpt ? terrainOpt.text : '-';
+        var pricePerHour = terrainOpt ? parseFloat(terrainOpt.dataset.price || 0) : 0;
+        var start = parseDateInput(startInput.value);
+        var end = parseDateInput(endInput.value);
+        var duration = computeDurationHours(start, end);
+        var total = (duration * pricePerHour) || 0;
+
+        document.getElementById('summaryTerrain').textContent = terrainText || '-';
+        document.getElementById('summaryDate').textContent = start ? start.toLocaleString() : '-';
+        document.getElementById('summaryDuration').textContent = duration ? duration.toFixed(2) + ' h' : '-';
+        document.getElementById('summaryPrice').textContent = pricePerHour ? pricePerHour.toFixed(2) + ' FCFA/h' : '-';
+        document.getElementById('summaryTotal').textContent = total ? total.toFixed(2) + ' FCFA' : '-';
+    }
+
+    terrainSelect.addEventListener('change', updateSummary);
+    startInput.addEventListener('change', updateSummary);
+    endInput.addEventListener('change', updateSummary);
+
+    // Vérifier disponibilité via AJAX
+    var checkBtn = document.getElementById('checkAvailabilityBtn');
+    var availDiv = document.getElementById('availabilityResult');
+
+    function isoDatetime(inputVal){
+        if(!inputVal) return null;
+        // browser input is local; convert to ISO-like string without Z
+        return new Date(inputVal).toISOString();
+    }
+
+    function fetchAvailability(){
+        var terrainId = terrainSelect.value;
+        var startIso = isoDatetime(startInput.value);
+        var endIso = isoDatetime(endInput.value);
+        availDiv.innerHTML = '';
+        if(!terrainId || !startIso || !endIso){
+            availDiv.innerHTML = '<div class="text-danger">Veuillez sélectionner terrain, début et fin.</div>';
+            return;
+        }
+        var formData = new FormData();
+        formData.append('terrain_id', terrainId);
+        formData.append('start_datetime', startIso);
+        formData.append('end_datetime', endIso);
+
+        function getCookie(name){
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== ''){
+                var cookies = document.cookie.split(';');
+                for(var i=0;i<cookies.length;i++){
+                    var cookie = cookies[i].trim();
+                    if(cookie.substring(0, name.length+1) === (name+'=')){
+                        cookieValue = decodeURIComponent(cookie.substring(name.length+1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        var csrftoken = getCookie('csrftoken') || (document.querySelector('input[name="csrfmiddlewaretoken"]') && document.querySelector('input[name="csrfmiddlewaretoken"]').value);
+        fetch('{% url "reservations:check_availability" %}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': csrftoken },
+            body: formData
+        }).then(function(resp){
+            if(!resp.ok){ throw new Error('HTTP ' + resp.status); }
+            return resp.json();
+        }).then(function(data){
+            if(data.success){
+                if(data.available){
+                    availDiv.innerHTML = '<div class="text-success">Le créneau est disponible. Prix estimé: ' + (data.pricing ? data.pricing.final_price + '  FCFA' : '—') + '</div>';
+                } else {
+                    var msg = '<div class="text-warning">Créneau indisponible. Conflits: <ul class="mb-0 small">';
+                    (data.conflicts || []).forEach(function(c){
+                        if(c.type == 'activity'){
+                            msg += '<li>Activité: ' + c.title + ' (' + c.start_time + ' - ' + c.end_time + ')</li>';
+                        } else if(c.type == 'timeslot'){
+                            msg += '<li>Créneau: ' + c.date + ' ' + c.start_time + ' - ' + c.end_time + '</li>';
+                        } else {
+                            msg += '<li>' + (c.repr || JSON.stringify(c)) + '</li>';
+                        }
+                    });
+                    msg += '</ul></div>';
+                    availDiv.innerHTML = msg;
+                }
+            } else {
+                availDiv.innerHTML = '<div class="text-danger">Erreur: ' + (data.error || 'inconnue') + '</div>';
+            }
+        }).catch(function(err){
+            availDiv.innerHTML = '<div class="text-danger">Erreur réseau</div>';
+        });
+    }
+
+    if(checkBtn){ checkBtn.addEventListener('click', fetchAvailability); }
+
+    // Initialize
+    updateSummary();
+})();
+</script>
+
+{% endblock %}

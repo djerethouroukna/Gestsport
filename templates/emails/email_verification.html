@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification de votre compte GestSport</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #2ECC71;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2ECC71;
+            text-decoration: none;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2ECC71);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="#" class="logo"> GestSport</a>
+        </div>
+        
+        <div class="content">
+            <h2>Bonjour {{ user.first_name }} {{ user.last_name }},</h2>
+            
+            <p>Merci de vous être inscrit sur <strong>GestSport</strong> !</p>
+            
+            <p>Pour activer votre compte et commencer à utiliser notre plateforme de gestion sportive, veuillez cliquer sur le bouton ci-dessous :</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ verification_url }}" class="button">Activer mon compte</a>
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Important :</strong> Ce lien expirera dans 24 heures. Si vous n'avez pas demandé cette inscription, vous pouvez ignorer cet email.
+            </div>
+            
+            <p>Si le bouton ne fonctionne pas, vous pouvez copier et coller ce lien dans votre navigateur :</p>
+            <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace;">
+                {{ verification_url }}
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>Cordialement,<br>L'équipe GestSport</p>
+            <p style="font-size: 12px; color: #999;">
+                Cet email a été envoyé automatiquement. Merci de ne pas répondre à cet adresse.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

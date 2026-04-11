@@ -1,0 +1,467 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.card {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin: 10px 0;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-top {
+  background-color: #fff;        /* haut blanc */
+  color: #2ECC71;                /* texte vert émeraude */
+  text-align: center;
+  padding: 20px;
+}
+
+.card-top h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0px;
+}
+
+.card-top p {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.card-top i {
+  color: #2ECC71;
+  font-size: 1rem;
+}
+
+.card-bottom {
+  background-color: #2ECC71;     /* bas vert émeraude */
+  color: #fff;                   /* texte blanc */
+  text-align: center;
+  padding: 15px 10px;
+}
+
+.card-bottom p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff !important;  /* Force le texte en blanc */
+}
+
+.card-bottom i {
+  color: #fff !important;  /* Force l'icône en blanc */
+}
+
+/* Styles pour les cartes de graphiques */
+.card.shadow .card-header.bg-primary {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow .card-header.bg-success {
+  background-color: #2ECC71 !important;  /* vert émeraude */
+  border-color: #2ECC71 !important;
+}
+
+.card.shadow {
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.shadow .card-body {
+  background-color: #fff;
+  padding: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block title %}Liste des Réservations - GestSport{% endblock %}
+
+{% block breadcrumb %}Réservations > Liste{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>
+        
+        Liste des Réservations
+    </h4>
+    <a href="{% url 'activities:activity_list' %}" class="btn btn-info">
+        Créer d'abord une activité
+    </a>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Statut</label>
+                <select name="status" class="form-select">
+                    <option value="">Tous les statuts</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>En attente</option>
+                    <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>Confirmée</option>
+                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Annulée</option>
+                    <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejetée</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Terrain</label>
+                <select name="terrain" class="form-select">
+                    <option value="">Tous les terrains</option>
+                    {% for terrain in terrains %}
+                    <option value="{{ terrain.id }}" {% if request.GET.terrain == terrain.id|stringformat:"s" %}selected{% endif %}>
+                        {{ terrain.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date début</label>
+                <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date fin</label>
+                <input type="date" name="date_to" class="form-control" value="{{ request.GET.date_to }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-info">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <a href="{% url 'reservations:reservation_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                
+                <p>{{ total_reservations }} TOTAL</p>
+            </div>
+            <div class="card-bottom">
+                <p>Taux de confirmation: {{ performance_percentage|floatformat:1 }}%</p>
+                <canvas id="totalReservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                
+                <p>{{ confirmed_count }}CONFIRMÉES</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ confirmed_percentage|floatformat:1 }}% du total</p>
+                <canvas id="confirmedReservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+                
+                <p>{{ pending_count }} EN ATTENTE</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ pending_percentage|floatformat:1 }}% du total</p>
+                <canvas id="pendingReservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-top">
+               
+                <p>{{ cancelled_count }}ANNULÉES</p>
+            </div>
+            <div class="card-bottom">
+                <p>{{ cancelled_percentage|floatformat:1 }}% du total</p>
+                <canvas id="cancelledReservationsChart" height="30" style="display: none;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activités confirmées disponibles pour réservation -->
+{% if user.role == 'coach' or user.role == 'admin' %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-running me-2"></i>
+            Activités Confirmées Disponibles
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if confirmed_activities %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Activité</th>
+                        <th>Type</th>
+                        <th>Coach</th>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Participants</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in confirmed_activities %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm bg-info text-white rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-running"></i>
+                                </div>
+                                <div>
+                                    <strong>{{ activity.title }}</strong>
+                                    {% if activity.description %}
+                                    <br><small class="text-muted">{{ activity.description|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ activity.get_activity_type_display }}</span>
+                        </td>
+                        <td>
+                            {% if activity.coach.get_full_name %}
+                            {{ activity.coach.get_full_name }}
+                            {% else %}
+                            {{ activity.coach.email }}
+                            {% endif %}
+                        </td>
+                        <td>{{ activity.start_time|date:"d/m/Y" }}</td>
+                        <td>{{ activity.start_time|date:"H:i" }} - {{ activity.end_time|date:"H:i" }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-info">{{ activity.participants.count }}/{{ activity.max_participants }}</span>
+                                <div class="progress ms-2" style="width: 50px; height: 6px;">
+                                    <div class="progress-bar" style="width: {% widthratio activity.participants.count activity.max_participants 100 %}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if not activity.reservation %}
+                            <a href="{% url 'activities:activity_reservation_create' activity.id %}" class="btn btn-sm btn-success" title="Réserver le terrain">
+                                <i class="fas fa-calendar-plus me-1"></i>
+                                Réserver
+                            </a>
+                            {% else %}
+                            <a href="{% url 'reservations:reservation_detail' activity.reservation.id %}" class="btn btn-sm btn-outline-primary" title="Voir la réservation">
+                                <i class="fas fa-eye me-1"></i>
+                                Réservation
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-info-circle fa-2x text-muted mb-3"></i>
+            <h6 class="text-muted">Aucune activité confirmée disponible</h6>
+            <p class="text-muted">Les activités doivent être confirmées par un administrateur avant de pouvoir créer des réservations.</p>
+            {% if user.role == 'coach' %}
+            <a href="{% url 'activities:activity_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-plus me-2"></i>Voir mes activités
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Liste des réservations -->
+<div class="card">
+    <div class="card-body">
+        {% if reservations %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Utilisateur</th>
+                        <th>Terrain</th>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reservation in reservations %}
+                    <tr>
+                        <td>#{{ reservation.id }}</td>
+                        <td>
+                            {% if reservation.user and reservation.user.username %}
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                    {{ reservation.user.username|first|upper }}
+                                </div>
+                                {{ reservation.user.get_full_name|default:reservation.user.username|default:"Utilisateur inconnu" }}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">Utilisateur supprimé</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ reservation.terrain.name|default:"Terrain supprimé" }}</td>
+                        <td>{{ reservation.start_time|date:"d/m/Y" }}</td>
+                        <td>
+                            {{ reservation.start_time|date:"H:i" }} - {{ reservation.end_time|date:"H:i" }}
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if reservation.status == 'confirmed' %}success{% elif reservation.status == 'pending' %}warning{% elif reservation.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                {{ reservation.get_status_display }}
+                            </span>
+                            {% if reservation.payment_status %}
+                            <span class="badge bg-{% if reservation.payment_status == 'paid' %}success{% else %}warning{% endif %} ms-1">
+                                {{ reservation.get_payment_status_display }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'reservations:reservation_detail' reservation.id %}" class="btn btn-sm btn-outline-primary" title="Voir">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if reservation.status == 'pending' %}
+                                <a href="{% url 'reservations:reservation_edit' reservation.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if reservation.status == 'confirmed' and not reservation.is_paid and not reservation.is_payment_pending_validation %}
+                                <a href="{% url 'payments:stripe_checkout' reservation.id %}" class="btn btn-sm btn-outline-success" title="Payer">
+                                    <i class="fas fa-credit-card"></i>
+                                </a>
+                                {% endif %}
+                                {% if reservation.status == 'confirmed' and reservation.is_paid %}
+                                    {% if reservation.ticket %}
+                                    <a href="{% url 'reservations:download_ticket' reservation.id %}" class="btn btn-sm btn-success" title="Télécharger ticket">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'reservations:download_ticket' reservation.id %}" class="btn btn-sm btn-outline-info" title="Générer ticket">
+                                        <i class="fas fa-ticket-alt"></i>
+                                    </a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Pagination des réservations">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.terrain %}&terrain={{ request.GET.terrain }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.terrain %}&terrain={{ request.GET.terrain }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.terrain %}&terrain={{ request.GET.terrain }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.terrain %}&terrain={{ request.GET.terrain }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.terrain %}&terrain={{ request.GET.terrain }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Aucune réservation trouvée</h5>
+            <p class="text-muted">
+                {% if request.GET.status or request.GET.terrain or request.GET.date_from or request.GET.date_to %}
+                Essayez de modifier vos filtres ou 
+                <a href="{% url 'reservations:reservation_list' %}" class="text-primary">réinitialiser les filtres</a>.
+                {% else %}
+                <p class="text-muted mb-3">Pour créer une réservation, vous devez d'abord créer une activité.</p>
+                <a href="{% url 'activities:activity_list' %}" class="btn btn-primary">
+                    <i class="fas fa-calendar-plus me-2"></i>Créer une activité
+                </a>
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Script pour les filtres dynamiques
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit sur changement de filtre
+    const filters = ['status', 'terrain'];
+    filters.forEach(function(filterId) {
+        const element = document.querySelector(`[name="${filterId}"]`);
+        if (element) {
+            element.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

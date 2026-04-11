@@ -1,0 +1,31 @@
+# Fichiers de logs
+logs/*.log
+logs/*.log.*
+
+# Fichiers de configuration avec données sensibles
+config_local.py
+*secrets.json
+*.key
+*.pem
+
+# Fichiers temporaires
+*.tmp
+*.temp
+__pycache__/
+*.pyc
+*.pyo
+
+# Environnement virtuel
+venv/
+env/
+.venv/
+
+# Fichiers de l'IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Système d'exploitation
+.DS_Store
+Thumbs.db

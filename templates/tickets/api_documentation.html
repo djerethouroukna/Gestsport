@@ -1,0 +1,327 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}API Tickets - Documentation{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-qrcode me-2"></i>
+                    API Tickets - Documentation
+                </h1>
+                <a href="{% url 'dashboard_admin' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Retour
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Introduction -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Introduction
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>L'API Tickets permet aux systèmes externes de vérifier et valider les tickets générés par GestSport.</p>
+                    <p><strong>Base URL:</strong> <code>{{ request.scheme }}://{{ request.get_host }}/tickets/api/</code></p>
+                    <p><strong>Authentification:</strong> Non requise (API publique pour scanners)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Endpoints -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-plug me-2"></i>
+                        Endpoints Disponibles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Vérification Ticket -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">
+                            <i class="fas fa-search me-2"></i>
+                            1. Vérifier un Ticket
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>URL:</strong></p>
+                                <code class="d-block p-2 bg-light">GET /api/verify/{ticket_number}/</code>
+                                
+                                <p class="mt-3"><strong>Exemple:</strong></p>
+                                <code class="d-block p-2 bg-light">GET /tickets/api/verify/TKT-EC73506E/</code>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Réponse (200 OK):</strong></p>
+                                <pre class="bg-light p-3"><code>{
+    "success": true,
+    "ticket": {
+        "id": 1,
+        "ticket_number": "TKT-EC73506E",
+        "generated_at": "2026-02-11T08:30:00Z",
+        "is_used": false,
+        "used_at": null,
+        "is_valid": true
+    },
+    "reservation": {
+        "id": 4,
+        "start_time": "2026-02-15T14:00:00Z",
+        "end_time": "2026-02-15T16:00:00Z",
+        "status": "confirmed",
+        "total_amount": "40.00"
+    },
+    "activity": {
+        "title": "Football Senior",
+        "type": "Entraînement",
+        "coach": {
+            "name": "Jean Dupont",
+            "email": "jean@example.com"
+        }
+    },
+    "terrain": {
+        "name": "Terrain A",
+        "type": "Football",
+        "location": "Salle principale"
+    }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Validation Ticket -->
+                    <div class="mb-4">
+                        <h6 class="text-success">
+                            <i class="fas fa-check me-2"></i>
+                            2. Valider un Ticket
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>URL:</strong></p>
+                                <code class="d-block p-2 bg-light">POST /api/validate/{ticket_number}/</code>
+                                
+                                <p class="mt-3"><strong>Corps:</strong></p>
+                                <pre class="bg-light p-3"><code>{}</code></pre>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Réponse (200 OK):</strong></p>
+                                <pre class="bg-light p-3"><code>{
+    "success": true,
+    "message": "Ticket validé avec succès",
+    "ticket": {
+        "id": 1,
+        "ticket_number": "TKT-EC73506E",
+        "used_at": "2026-02-15T14:05:00Z"
+    },
+    "reservation": {
+        "id": 4,
+        "user_name": "Marie Martin",
+        "activity_title": "Football Senior",
+        "terrain_name": "Terrain A"
+    }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informations Simplifiées -->
+                    <div class="mb-4">
+                        <h6 class="text-warning">
+                            <i class="fas fa-info me-2"></i>
+                            3. Informations Simplifiées
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>URL:</strong></p>
+                                <code class="d-block p-2 bg-light">GET /api/info/{ticket_number}/</code>
+                                
+                                <p class="mt-3"><strong>Usage:</strong></p>
+                                <p class="text-muted">Idéal pour les scanners qui affichent uniquement les informations essentielles</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Réponse (200 OK):</strong></p>
+                                <pre class="bg-light p-3"><code>{
+    "ticket_number": "TKT-EC73506E",
+    "status": "valid",
+    "activity": "Football Senior",
+    "date": "15/02/2026",
+    "time": "14:00",
+    "duration": "120 minutes",
+    "terrain": "Terrain A",
+    "participant": "Marie Martin"
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Codes d'erreur -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Codes d'Erreur
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Message</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-danger">404</span></td>
+                                    <td>Ticket non trouvé</td>
+                                    <td>Le numéro de ticket n'existe pas dans le système</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning">400</span></td>
+                                    <td>Ticket déjà utilisé</td>
+                                    <td>Le ticket a déjà été validé précédemment</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning">400</span></td>
+                                    <td>Ticket non valide</td>
+                                    <td>La réservation associée n'est pas confirmée</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-secondary">500</span></td>
+                                    <td>Erreur serveur</td>
+                                    <td>Erreur interne du système</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test de l'API -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-flask me-2"></i>
+                        Tester l'API
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="ticket-number-input" class="form-label">Numéro de ticket:</label>
+                                <input type="text" id="ticket-number-input" class="form-control" placeholder="TKT-XXXXXXXX">
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" onclick="verifyTicket()">
+                                    <i class="fas fa-search me-1"></i>
+                                    Vérifier
+                                </button>
+                                <button class="btn btn-success" onclick="validateTicket()">
+                                    <i class="fas fa-check me-1"></i>
+                                    Valider
+                                </button>
+                                <button class="btn btn-info" onclick="getTicketInfo()">
+                                    <i class="fas fa-info me-1"></i>
+                                    Infos
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="api-result" class="p-3 bg-light rounded" style="min-height: 200px; font-family: monospace; font-size: 12px;">
+                                Les résultats apparaîtront ici...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function verifyTicket() {
+    const ticketNumber = document.getElementById('ticket-number-input').value;
+    if (!ticketNumber) {
+        alert('Veuillez entrer un numéro de ticket');
+        return;
+    }
+    
+    fetch(`/tickets/api/verify/${ticketNumber}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            document.getElementById('api-result').textContent = 'Erreur: ' + error.message;
+        });
+}
+
+function validateTicket() {
+    const ticketNumber = document.getElementById('ticket-number-input').value;
+    if (!ticketNumber) {
+        alert('Veuillez entrer un numéro de ticket');
+        return;
+    }
+    
+    fetch(`/tickets/api/validate/${ticketNumber}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            document.getElementById('api-result').textContent = 'Erreur: ' + error.message;
+        });
+}
+
+function getTicketInfo() {
+    const ticketNumber = document.getElementById('ticket-number-input').value;
+    if (!ticketNumber) {
+        alert('Veuillez entrer un numéro de ticket');
+        return;
+    }
+    
+    fetch(`/tickets/api/info/${ticketNumber}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            document.getElementById('api-result').textContent = 'Erreur: ' + error.message;
+        });
+}
+</script>
+{% endblock %}

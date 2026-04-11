@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vérifier votre compte - GestSport{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow mt-5 mb-5">
+                <div class="card-header bg-info text-white text-center py-4">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Vérification du Compte
+                    </h4>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <i class="fas fa-envelope fa-4x text-info mb-3"></i>
+                    <h5 class="mb-3">Un email de vérification a été envoyé</h5>
+                    <p class="text-muted mb-4">
+                        Nous avons envoyé un lien de confirmation à 
+                        <strong>{{ email }}</strong>
+                    </p>
+                    
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Vérifiez votre boîte mail</strong> y compris les spams
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Code de vérification (optionnel)</label>
+                            <input type="text" class="form-control form-control-lg text-center" name="verification_code" placeholder="XXXXXX" maxlength="6">
+                            <small class="text-muted">Si vous avez reçu un code par SMS</small>
+                        </div>
+                        <button type="submit" class="btn btn-info w-100 btn-lg fw-bold">
+                            <i class="fas fa-check me-2"></i>Vérifier
+                        </button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="text-muted mb-3">Vous n'avez pas reçu l'email ?</p>
+                        <a href="#" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-redo me-1"></i>Renvoyer l'email
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="{% url 'login' %}" class="small text-muted text-decoration-none">
+                            <i class="fas fa-arrow-left me-1"></i>Retour à la connexion
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input[type="text"] {
+        border-radius: 0.5rem;
+        letter-spacing: 0.2em;
+        font-weight: bold;
+    }
+    input[type="text"]:focus {
+        border-color: #0dcaf0;
+        box-shadow: 0 0 0 0.2rem rgba(13, 202, 240, 0.25);
+    }
+</style>
+{% endblock %}

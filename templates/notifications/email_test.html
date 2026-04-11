@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Emails - GestSport</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .btn-test {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: transform 0.2s;
+            margin: 10px;
+        }
+        .btn-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+        }
+        .stats-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .stat-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="card">
+            <div class="card-header text-center">
+                <h2><i class="fas fa-envelope me-3"></i>Centre de Test Emails</h2>
+                <p class="mb-0">Testez et vérifiez le système d'envoi d'emails</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-user me-2"></i>Utilisateur actuel</h5>
+                        <p><strong>{{ user.get_full_name }}</strong></p>
+                        <p><code>{{ user.email }}</code></p>
+                        <p><span class="badge bg-{{ 'success' if user.email_verified else 'warning' }}">
+                            {{ 'Vérifié' if user.email_verified else 'Non vérifié' }}
+                        </span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-cog me-2"></i>Configuration</h5>
+                        <p><strong>Email Backend:</strong> SMTP</p>
+                        <p><strong>From:</strong> noreply@gestsport.com</p>
+                        <p><strong>Host:</strong> smtp.gmail.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card stats-card">
+            <div class="card-header">
+                <h4><i class="fas fa-chart-bar me-2"></i>Statistiques</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Utilisateurs</div>
+                            <div class="stat-value">{{ total_users }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Réservations</div>
+                            <div class="stat-value">{{ total_reservations }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tests -->
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-vial me-2"></i>Tests d'Envoi</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row text-center">
+                        <div class="col-md-6 mb-3">
+                            <button type="submit" name="email_type" value="verification" class="btn-test">
+                                <i class="fas fa-check-circle me-2"></i>Email de Vérification
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="submit" name="email_type" value="welcome" class="btn-test">
+                                <i class="fas fa-heart me-2"></i>Email de Bienvenue
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="submit" name="email_type" value="reservation" class="btn-test">
+                                <i class="fas fa-calendar me-2"></i>Email de Réservation
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="submit" name="email_type" value="password_reset" class="btn-test">
+                                <i class="fas fa-key me-2"></i>Email de Réinitialisation
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-info-circle me-2"></i>Instructions</h4>
+            </div>
+            <div class="card-body">
+                <h5>📧 Configuration Gmail Requise</h5>
+                <ol>
+                    <li>Activer la vérification en deux étapes sur le compte Gmail</li>
+                    <li>Générer un "mot de passe d'application"</li>
+                    <li>Configurer <code>EMAIL_HOST_PASSWORD</code> dans settings.py</li>
+                    <li>S'assurer que <code>EMAIL_USE_TLS = True</code></li>
+                </ol>
+                
+                <h5>🔍 Vérification</h5>
+                <ul>
+                    <li>Vérifiez la console Django pour les logs d'envoi</li>
+                    <li>Consultez le dossier spam de votre boîte mail</li>
+                    <li>Testez avec différentes adresses email</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

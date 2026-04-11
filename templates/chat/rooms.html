@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Salons de Chat - GestSport{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row h-100" style="min-height: 85vh;">
+        <!-- Sidebar salons -->
+        <div class="col-lg-3 bg-light border-end">
+            <div class="p-3">
+                <h4 class="fw-bold mb-3">
+                    <i class="fas fa-comments me-2"></i>Salons
+                </h4>
+                <button class="btn btn-primary btn-sm w-100 mb-3">
+                    <i class="fas fa-plus me-2"></i>Nouveau Salon
+                </button>
+                
+                <!-- Recherche -->
+                <div class="input-group input-group-sm mb-3">
+                    <input type="text" class="form-control" placeholder="Rechercher...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                
+                <!-- Liste salons -->
+                <div class="list-group list-group-flush">
+                    {% for room in chatrooms %}
+                    <a href="{% url 'chat:chat_room' room.id %}" class="list-group-item list-group-item-action {% if current_room.id == room.id %}active{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-truncate">
+                                <h6 class="mb-1">{{ room.name }}</h6>
+                                <small class="text-muted">{{ room.participants.count }} participants</small>
+                            </div>
+                            {% if room.unread_count %}
+                            <span class="badge bg-danger rounded-pill">{{ room.unread_count }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                        <p>Aucun salon</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenu -->
+        <div class="col-lg-9">
+            {% if current_room %}
+            <div class="d-flex flex-column h-100">
+                <!-- En-tête -->
+                <div class="p-3 border-bottom bg-white">
+                    <h5 class="mb-1">{{ current_room.name }}</h5>
+                    <small class="text-muted">
+                        <i class="fas fa-users me-1"></i>
+                        {{ current_room.participants.count }} participants
+                    </small>
+                </div>
+                
+                <!-- Messages -->
+                <div class="flex-grow-1 overflow-auto p-3" id="messagesContainer">
+                    {% for message in messages %}
+                    <div class="mb-3 {% if message.author == user %}text-end{% endif %}">
+                        <div class="d-inline-block bg-{% if message.author == user %}primary text-white{% else %}light{% endif %} px-3 py-2 rounded" style="max-width: 70%; word-break: break-word;">
+                            {% if message.author != user %}
+                            <p class="mb-1 small fw-bold">{{ message.author.get_full_name }}</p>
+                            {% endif %}
+                            <p class="mb-1">{{ message.content }}</p>
+                            <small class="opacity-75">{{ message.created_at|time:"H:i" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Formulaire -->
+                <div class="p-3 border-top bg-white">
+                    <form method="post" class="input-group">
+                        {% csrf_token %}
+                        <input type="text" class="form-control" name="content" placeholder="Votre message..." required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-send"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="d-flex align-items-center justify-content-center h-100">
+                <div class="text-center text-muted">
+                    <i class="fas fa-comments fa-5x mb-3 d-block opacity-50"></i>
+                    <h5>Sélectionnez un salon</h5>
+                    <p>Ou créez un nouveau salon pour commencer</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    #messagesContainer {
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+</style>
+
+<script>
+// Auto-scroll vers le dernier message
+const container = document.getElementById('messagesContainer');
+if (container) {
+    container.scrollTop = container.scrollHeight;
+}
+
+// Auto-refresh des messages (optionnel)
+// setInterval(() => location.reload(), 5000);
+</script>
+{% endblock %}

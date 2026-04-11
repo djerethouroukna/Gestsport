@@ -1,0 +1,404 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Paiement Réservation #{{ reservation.id }} - GestSport{% endblock %}
+
+{% block breadcrumb %}Paiement Réservation #{{ reservation.id }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-4" style="width: 60px; height: 60px; font-size: 1.5rem; background: rgba(255,255,255,0.2);">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div>
+                            <h2 class="mb-2">Procéder au Paiement</h2>
+                            <p class="mb-1 opacity-75">Réservation #{{ reservation.id }} — {{ reservation.terrain.name }}</p>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <span class="badge bg-light text-dark fs-6">
+                                    <i class="fas fa-futbol me-1"></i>{{ reservation.terrain.get_terrain_type_display }}
+                                </span>
+                                <span class="badge bg-warning fs-6">
+                                    <i class="fas fa-clock me-1"></i>{{ reservation.start_time|date:'d/m/Y H:i' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="text-end">
+                        <div class="small opacity-75">Montant à payer</div>
+                        <div class="h3 mb-0">{{ reservation.total_amount }}FCFA</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Payment Methods -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-credit-card me-2 text-primary"></i>
+                    Méthodes de paiement
+                </h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary active" id="cardBtn">
+                        <i class="fas fa-credit-card me-1"></i>Carte
+                    </button>
+                    <button class="btn btn-outline-secondary" id="mobileBtn">
+                        <i class="fas fa-mobile-alt me-1"></i>Mobile
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Card Payment Form -->
+            <div id="cardPaymentForm">
+                <form id="paymentForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="cardNumber" class="form-label fw-semibold">
+                                <i class="fas fa-credit-card me-2 text-primary"></i>Numéro de carte
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-credit-card"></i>
+                                </span>
+                                <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <label for="cardName" class="form-label fw-semibold">
+                                <i class="fas fa-user me-2 text-info"></i>Nom sur la carte
+                            </label>
+                            <input type="text" class="form-control" id="cardName" placeholder="Jean Dupont" required>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="cardExpiry" class="form-label fw-semibold">
+                                <i class="fas fa-calendar me-2 text-warning"></i>Expiration
+                            </label>
+                            <input type="text" class="form-control" id="cardExpiry" placeholder="MM/AA" maxlength="5" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="cardCVV" class="form-label fw-semibold">
+                                <i class="fas fa-lock me-2 text-success"></i>CVV
+                            </label>
+                            <input type="text" class="form-control" id="cardCVV" placeholder="123" maxlength="3" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-semibold">
+                                <i class="fas fa-envelope me-2 text-primary"></i>Email de confirmation
+                            </label>
+                            <input type="email" class="form-control" id="email" value="{{ user.email }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-lock me-2"></i>
+                            Payer {{ reservation.total_amount }}F CFA
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="payLaterBtn">
+                            <i class="fas fa-clock me-2"></i>
+                            Payer ultérieurement
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Mobile Payment Form (Hidden by default) -->
+            <div id="mobilePaymentForm" style="display: none;">
+                <div class="text-center py-4">
+                    <div class="social-icon primary mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h5 class="mb-3">Paiement Mobile</h5>
+                    <p class="text-muted mb-4">Choisissez votre opérateur mobile</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-primary w-100">
+                                <i class="fas fa-phone me-2"></i>Orange Money
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-success w-100">
+                                <i class="fas fa-phone me-2"></i>MTN Mobile
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-warning w-100">
+                                <i class="fas fa-phone me-2"></i>Moov Money
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Security Information -->
+        <div class="progress-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-shield-alt me-2 text-success"></i>
+                    Sécurité et confidentialité
+                </h6>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div class="social-icon success mx-auto mb-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h6 class="mb-2">Paiement sécurisé</h6>
+                        <p class="small text-muted">Vos informations sont cryptées et protégées</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div class="social-icon primary mx-auto mb-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h6 class="mb-2">Protection SSL</h6>
+                        <p class="small text-muted">Connexion sécurisée avec certificat SSL</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div class="social-icon warning mx-auto mb-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <h6 class="mb-2">Confidentialité</h6>
+                        <p class="small text-muted">Vos données ne sont jamais partagées</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Order Summary -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">
+                <i class="fas fa-receipt me-2 text-info"></i>
+                Récapitulatif de la commande
+            </h6>
+            
+            <div class="list-group list-group-flush">
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="fw-semibold">{{ reservation.terrain.name }}</div>
+                            <small class="text-muted">{{ reservation.terrain.get_terrain_type_display }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-semibold">{{ reservation.terrain.price_per_hour }}FCFA</div>
+                            <small class="text-muted">/heure</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Durée</small>
+                        <small>{{ duration }} heures</small>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Date</small>
+                        <small>{{ reservation.start_time|date:'d/m/Y H:i' }}</small>
+                    </div>
+                </div>
+                
+                <div class="list-group-item border-0 px-0">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Réservation #</small>
+                        <small>{{ reservation.id }}</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-top pt-3 mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Sous-total</span>
+                    <span>{% widthratio reservation.terrain.price_per_hour 1 duration %}FCFA</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Frais de service</span>
+                    <span>0FCFA</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Total</h6>
+                    <h5 class="mb-0 text-success">{{ reservation.total_amount }}FCFA</h5>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Help Section -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">
+                <i class="fas fa-question-circle me-2 text-warning"></i>
+                Besoin d'aide ?
+            </h6>
+            
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item border-0 px-0 text-decoration-none">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon info me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Guide de paiement</div>
+                            <small class="text-muted">Comment payer en ligne</small>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="#" class="list-group-item border-0 px-0 text-decoration-none">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon primary me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Support client</div>
+                            <small class="text-muted">Contactez-nous 24/7</small>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="#" class="list-group-item border-0 px-0 text-decoration-none">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon success me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                            <i class="fas fa-undo"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Politique de remboursement</div>
+                            <small class="text-muted">Conditions de remboursement</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Back Button -->
+        <div class="text-center">
+            <a href="{% url 'reservations:reservation_detail' reservation.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Retour à la réservation
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification function -->
+<script>
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    
+    const bgClass = type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info';
+    
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header ${bgClass} text-white">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Payment method switching
+    document.getElementById('cardBtn')?.addEventListener('click', function() {
+        document.getElementById('cardPaymentForm').style.display = 'block';
+        document.getElementById('mobilePaymentForm').style.display = 'none';
+        this.classList.add('active');
+        document.getElementById('mobileBtn').classList.remove('active');
+    });
+    
+    document.getElementById('mobileBtn')?.addEventListener('click', function() {
+        document.getElementById('cardPaymentForm').style.display = 'none';
+        document.getElementById('mobilePaymentForm').style.display = 'block';
+        this.classList.add('active');
+        document.getElementById('cardBtn').classList.remove('active');
+    });
+    
+    // Card number formatting
+    document.getElementById('cardNumber')?.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\s/g, '');
+        let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+        e.target.value = formattedValue;
+    });
+    
+    // Expiry date formatting
+    document.getElementById('cardExpiry')?.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2, 4);
+        }
+        e.target.value = value;
+    });
+    
+    // CVV validation (numbers only)
+    document.getElementById('cardCVV')?.addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+    
+    // Payment form submission
+    document.getElementById('paymentForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show processing
+        showToast('Traitement du paiement en cours...', 'info');
+        
+        // Simulate payment processing
+        setTimeout(() => {
+            showToast('Paiement effectué avec succès !', 'success');
+            // Redirect to success page
+            setTimeout(() => {
+                window.location.href = '{% url "reservations:reservation_detail" reservation.id %}';
+            }, 2000);
+        }, 2000);
+    });
+    
+    // Pay later button
+    document.getElementById('payLaterBtn')?.addEventListener('click', function() {
+        if (confirm('Vous pourrez payer ultérieurement depuis votre espace réservations.')) {
+            showToast('Paiement reporté', 'info');
+            setTimeout(() => {
+                window.location.href = '{% url "reservations:reservation_detail" reservation.id %}';
+            }, 1500);
+        }
+    });
+});
+</script>
+{% endblock %}

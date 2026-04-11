@@ -1,0 +1,812 @@
+{% extends 'dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Paramètres - GestSport{% endblock %}
+
+{% block breadcrumb %}Paramètres{% endblock %}
+
+{% block content %}
+
+<!-- Messages Django -->
+{% if messages %}
+<div class="row mb-4">
+    <div class="col-12">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Settings Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="progress-card" style="background: linear-gradient(135deg, #2ECC71); color: white; border: none;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2" data-translate="settings">
+                        <i class="fas fa-cog me-3"></i>
+                        <span data-translate="settings">Paramètres du Compte</span>
+                    </h2>
+                    <p class="mb-0 opacity-75" data-translate="settings_description">Gérez vos préférences et la sécurité de votre compte</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                        {{ user.get_full_name.0|default:user.email.0|upper }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Settings -->
+    <div class="col-xl-8 col-lg-7">
+        <!-- Security Settings -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-shield-alt me-2 text-primary"></i>
+                    Sécurité
+                </h6>
+                <span class="badge bg-success">Sécurisé</span>
+            </div>
+            
+            <div class="row align-items-center mb-4">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon primary me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Mot de Passe</h6>
+                            <p class="text-muted mb-0">Dernière modification il y a 30 jours</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#passwordModal">
+                        <i class="fas fa-edit me-1"></i>Changer
+                    </button>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row align-items-center mb-4">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon info me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Authentification à 2 Facteurs</h6>
+                            <p class="text-muted mb-0">Ajoutez une couche de sécurité supplémentaire</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="twoFactorToggle">
+                        <label class="form-check-label" for="twoFactorToggle"></label>
+                    </div>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon success me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Sessions Actives</h6>
+                            <p class="text-muted mb-0">3 appareils connectés</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-list me-1"></i>Voir
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preferences -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0" data-translate="preferences">
+                    <i class="fas fa-sliders-h me-2 text-info"></i>
+                    <span data-translate="preferences">Préférences</span>
+                </h6>
+                <button type="submit" form="preferencesForm" class="btn btn-success btn-sm">
+                    <i class="fas fa-save me-1"></i><span data-translate="save">Enregistrer</span>
+                </button>
+            </div>
+            
+            <form method="post" action="{% url 'users:save_preferences' %}" id="preferencesForm">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="languageSelect" class="form-label fw-semibold" data-translate="language">
+                            <i class="fas fa-globe me-2 text-primary"></i><span data-translate="language">Langue</span>
+                        </label>
+                        <select class="form-select" id="languageSelect" name="language" onchange="changeLanguage(this.value)">
+                            <option value="fr" {% if preferences.language == 'fr' %}selected{% endif %}>Français</option>
+                            <option value="en" {% if preferences.language == 'en' %}selected{% endif %}>English</option>
+                            <option value="es" {% if preferences.language == 'es' %}selected{% endif %}>Español</option>
+                            <option value="ar" {% if preferences.language == 'ar' %}selected{% endif %}>العربية</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="themeSelect" class="form-label fw-semibold" data-translate="theme">
+                            <i class="fas fa-palette me-2 text-warning"></i><span data-translate="theme">Thème</span>
+                        </label>
+                        <select class="form-select" id="themeSelect" name="theme">
+                            <option value="light" {% if preferences.theme == 'light' %}selected{% endif %}>Clair</option>
+                            <option value="dark" {% if preferences.theme == 'dark' %}selected{% endif %}>Sombre</option>
+                            <option value="auto" {% if preferences.theme == 'auto' %}selected{% endif %}>Automatique</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="timezoneSelect" class="form-label fw-semibold" data-translate="timezone">
+                            <i class="fas fa-clock me-2 text-success"></i><span data-translate="timezone">Fuseau Horaire</span>
+                        </label>
+                        <select class="form-select" id="timezoneSelect" name="timezone">
+                            <option value="Africa/Ndjamena" {% if preferences.timezone == 'Africa/Ndjamena' %}selected{% endif %}>N'Djamena (GMT+1)</option>
+                            <option value="Europe/Paris" {% if preferences.timezone == 'Europe/Paris' %}selected{% endif %}>Paris (GMT+1)</option>
+                            <option value="UTC" {% if preferences.timezone == 'UTC' %}selected{% endif %}>UTC (GMT+0)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label for="currencySelect" class="form-label fw-semibold" data-translate="currency">
+                            <i class="fas fa-money-bill-wave me-2 text-info"></i><span data-translate="currency">Devise</span>
+                        </label>
+                        <select class="form-select" id="currencySelect" name="currency">
+                            <option value="XAF" {% if preferences.currency == 'XAF' %}selected{% endif %}>FCFA (XAF)</option>
+                            <option value="EUR" {% if preferences.currency == 'EUR' %}selected{% endif %}>Euro ( FCFA)</option>
+                            <option value="USD" {% if preferences.currency == 'USD' %}selected{% endif %}>Dollar ($)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" name="emailNotifications" {% if preferences.email_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="emailNotifications" data-translate="email_notifications">
+                                <i class="fas fa-envelope me-2 text-primary"></i>
+                                <span data-translate="email_notifications">Notifications par email</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="smsNotifications" name="smsNotifications" {% if preferences.sms_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="smsNotifications" data-translate="sms_notifications">
+                                <i class="fas fa-sms me-2 text-info"></i>
+                                <span data-translate="sms_notifications">Notifications par SMS</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="pushNotifications" name="pushNotifications" {% if preferences.push_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="pushNotifications" data-translate="push_notifications">
+                                <i class="fas fa-bell me-2 text-warning"></i>
+                                <span data-translate="push_notifications">Notifications push</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="publicProfile" name="publicProfile" {% if preferences.public_profile %}checked{% endif %}>
+                            <label class="form-check-label" for="publicProfile">
+                                <i class="fas fa-eye me-2 text-success"></i>
+                                Profil public
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Privacy Settings -->
+        <div class="progress-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0">
+                    <i class="fas fa-user-shield me-2 text-warning"></i>
+                    Confidentialité
+                </h6>
+                <span class="badge bg-info">Configuré</span>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showEmail" name="showEmail" {% if preferences.show_email %}checked{% endif %}>
+                        <label class="form-check-label" for="showEmail">
+                            Afficher l'email dans le profil
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showPhone" name="showPhone" {% if preferences.show_phone %}checked{% endif %}>
+                        <label class="form-check-label" for="showPhone">
+                            Afficher le téléphone dans le profil
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="allowFriendRequests" name="allowFriendRequests" {% if preferences.allow_friend_requests %}checked{% endif %}>
+                        <label class="form-check-label" for="allowFriendRequests">
+                            Autoriser les demandes d'amis
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="dataAnalytics" name="dataAnalytics" {% if preferences.data_analytics %}checked{% endif %}>
+                        <label class="form-check-label" for="dataAnalytics">
+                            Participer aux analytics
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Danger Zone -->
+        <div class="progress-card border-danger">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="mb-0 text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Zone Dangereuse
+                </h6>
+                <span class="badge bg-danger">Attention</span>
+            </div>
+            
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon danger me-3" style="width: 50px; height: 50px; font-size: 1.2rem; background: #e74a3b;">
+                            <i class="fas fa-trash"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 text-danger">Supprimer le Compte</h6>
+                            <p class="text-muted mb-0">Cette action est irréversible. Toutes vos données seront supprimées.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                        <i class="fas fa-trash me-1"></i>Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Quick Stats -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Statistiques du Compte</h6>
+            
+            <div class="row text-center mb-4">
+                <div class="col-6">
+                    <div class="h4 mb-1 text-primary">{{ overall_score }}%</div>
+                    <div class="small text-muted">Complétude</div>
+                </div>
+                <div class="col-6">
+                    <div class="h4 mb-1 text-success">{{ security_grade }}</div>
+                    <div class="small text-muted">Sécurité</div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Profil</div>
+                    <div class="small">{{ profile_completeness }}%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-{% if profile_completeness >= 80 %}success{% elif profile_completeness >= 60 %}warning{% else %}danger{% endif %}" style="width: {{ profile_completeness }}%;"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Sécurité</div>
+                    <div class="small">{{ security_score }}%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-{% if security_score >= 80 %}success{% elif security_score >= 60 %}warning{% else %}danger{% endif %}" style="width: {{ security_score }}%;"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small">Confidentialité</div>
+                    <div class="small">{{ privacy_score }}%</div>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-{% if privacy_score >= 80 %}success{% elif privacy_score >= 60 %}warning{% else %}danger{% endif %}" style="width: {{ privacy_score }}%;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="progress-card mb-4">
+            <h6 class="mb-4">Actions Rapides</h6>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'users:profile' %}" class="btn btn-outline-info">
+                    <i class="fas fa-user me-2"></i>
+                    Voir le profil
+                </a>
+                <a href="{% url 'users:profile_edit' %}" class="btn btn-outline-info">
+                    <i class="fas fa-edit me-2"></i>
+                    Modifier le profil
+                </a>
+                <button class="btn btn-outline-info">
+                    <i class="fas fa-download me-2"></i>
+                    Télécharger mes données
+                </button>
+                <button class="btn btn-outline-info">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Audit de sécurité
+                </button>
+            </div>
+        </div>
+        
+        <!-- Help & Support -->
+        <div class="progress-card">
+            <h6 class="mb-4">Aide & Support</h6>
+            
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon primary me-3" style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Centre d'aide</div>
+                            <div class="small text-muted">Guides et tutoriels</div>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="{% url 'contact' %}" class="list-group-item list-group-item-action border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon info me-3" style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Support technique</div>
+                            <div class="small text-muted">Contactez-nous</div>
+                        </div>
+                    </div>
+                </a>
+                
+                <a href="#" class="list-group-item list-group-item-action border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="social-icon success me-3" style="width: 40px; height: 40px; font-size: 1rem;">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">FAQ</div>
+                            <div class="small text-muted">Questions fréquentes</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal changement mot de passe -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-lock me-2"></i>
+                    Changer le Mot de Passe
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'users:change_password' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-key me-2 text-warning"></i>
+                            Mot de passe actuel
+                        </label>
+                        <div class="input-group">
+                            <input type="password" name="old_password" class="form-control" required>
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-lock me-2 text-success"></i>
+                            Nouveau mot de passe
+                        </label>
+                        <div class="input-group">
+                            <input type="password" name="new_password" class="form-control" required>
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-danger" style="width: 25%"></div>
+                        </div>
+                        <small class="text-muted">Force: Faible</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-lock me-2 text-info"></i>
+                            Confirmer le mot de passe
+                        </label>
+                        <div class="input-group">
+                            <input type="password" name="confirm_password" class="form-control" required>
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Changer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal suppression compte -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Supprimer le Compte
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="#">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Attention !</strong> Cette action est définitive et irréversible.
+                    </div>
+                    <p class="mb-3">Toutes vos données seront supprimées :</p>
+                    <ul class="text-danger">
+                        <li>Historique des réservations</li>
+                        <li>Informations personnelles</li>
+                        <li>Préférences et paramètres</li>
+                        <li>Données de paiement</li>
+                    </ul>
+                    <hr>
+                    <p class="mb-2">Entrez votre mot de passe pour confirmer :</p>
+                    <div class="input-group">
+                        <input type="password" class="form-control" placeholder="Mot de passe" required>
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Supprimer Définitivement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password strength indicator
+document.querySelector('#passwordModal input[placeholder="Nouveau mot de passe"]')?.addEventListener('input', function() {
+    const password = this.value;
+    let strength = 0;
+    let strengthText = 'Très faible';
+    let strengthColor = 'bg-danger';
+    
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^a-zA-Z0-9]/)) strength++;
+    
+    const strengthBar = this.parentElement.nextElementSibling;
+    const strengthTextElement = strengthBar.nextElementSibling;
+    
+    if (strength === 1) {
+        strengthText = 'Faible';
+        strengthColor = 'bg-danger';
+        strengthBar.firstElementChild.style.width = '25%';
+    } else if (strength === 2) {
+        strengthText = 'Moyen';
+        strengthColor = 'bg-warning';
+        strengthBar.firstElementChild.style.width = '50%';
+    } else if (strength === 3) {
+        strengthText = 'Fort';
+        strengthColor = 'bg-info';
+        strengthBar.firstElementChild.style.width = '75%';
+    } else if (strength === 4) {
+        strengthText = 'Très fort';
+        strengthColor = 'bg-success';
+        strengthBar.firstElementChild.style.width = '100%';
+    }
+    
+    strengthBar.firstElementChild.className = `progress-bar ${strengthColor}`;
+    strengthTextElement.textContent = `Force: ${strengthText}`;
+});
+
+// Toggle password visibility
+document.querySelectorAll('.modal .input-group button').forEach(button => {
+    button.addEventListener('click', function() {
+        const input = this.parentElement.querySelector('input');
+        const icon = this.querySelector('i');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+});
+
+// Form submission
+document.getElementById('preferencesForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Show success message
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong class="me-auto">Succès</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                Vos préférences ont été enregistrées avec succès !
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+});
+
+// Sync theme selector with localStorage (déjà géré globalement)
+document.addEventListener('DOMContentLoaded', function() {
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+        const savedTheme = localStorage.getItem('selectedTheme') || '{{ preferences.theme }}';
+        themeSelect.value = savedTheme;
+    }
+});
+
+// Change language function
+function changeLanguage(language) {
+    // Save to localStorage immediately
+    localStorage.setItem('selectedLanguage', language);
+    
+    // Apply translations immediately
+    applyTranslations(language);
+    applyEnhancedTranslations(language);
+    
+    // Use fetch API to save to server (simpler than form)
+    fetch('{% url "users:set_language" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `language=${language}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Langue sauvegardée avec succès:', data.language);
+            // Afficher un message de succès discret
+            showToast('success', 'Langue changée avec succès');
+        } else {
+            console.error('Erreur serveur:', data.error);
+            // Afficher un message d'erreur discret
+            showToast('error', 'Erreur lors du changement de langue');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur réseau:', error);
+        showToast('error', 'Erreur réseau lors du changement de langue');
+    });
+}
+
+// Helper function to show toast messages
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `position-fixed top-0 end-0 p-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-${type === 'success' ? 'success' : 'danger'} text-white">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                <strong class="me-auto">${type === 'success' ? 'Succès' : 'Erreur'}</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Enhanced translation function for common elements
+function applyEnhancedTranslations(language) {
+    // Common French to other languages mappings
+    const translations = {
+        'en': {
+            'Paramètres du Compte': 'Account Settings',
+            'Gérez vos préférences et la sécurité de votre compte': 'Manage your preferences and account security',
+            'Préférences': 'Preferences',
+            'Langue': 'Language',
+            'Thème': 'Theme',
+            'Fuseau Horaire': 'Timezone',
+            'Devise': 'Currency',
+            'Notifications par email': 'Email notifications',
+            'Notifications par SMS': 'SMS notifications',
+            'Notifications push': 'Push notifications',
+            'Confidentialité': 'Privacy',
+            'Enregistrer': 'Save',
+            'Changer le Mot de Passe': 'Change Password',
+            'Mot de passe actuel': 'Current Password',
+            'Nouveau mot de passe': 'New Password',
+            'Confirmer le mot de passe': 'Confirm Password',
+            'Annuler': 'Cancel',
+            'Changer': 'Change',
+            'Supprimer le Compte': 'Delete Account',
+            'Attention !': 'Warning!',
+            'Force: Faible': 'Strength: Weak'
+        },
+        'es': {
+            'Paramètres du Compte': 'Configuración de Cuenta',
+            'Gérez vos préférences et la sécurité de votre compte': 'Gestiona tus preferencias y seguridad de cuenta',
+            'Préférences': 'Preferencias',
+            'Langue': 'Idioma',
+            'Thème': 'Tema',
+            'Fuseau Horaire': 'Zona horaria',
+            'Devise': 'Moneda',
+            'Notifications par email': 'Notificaciones por email',
+            'Notifications par SMS': 'Notificaciones por SMS',
+            'Notifications push': 'Notificaciones push',
+            'Confidentialité': 'Privacidad',
+            'Enregistrer': 'Guardar',
+            'Changer le Mot de Passe': 'Cambiar contraseña',
+            'Mot de passe actuel': 'Contraseña anterior',
+            'Nouveau mot de passe': 'Nueva contraseña',
+            'Confirmer le mot de passe': 'Confirmar contraseña',
+            'Annuler': 'Cancelar',
+            'Changer': 'Cambiar',
+            'Supprimer le Compte': 'Eliminar cuenta',
+            'Attention !': '¡Atención!',
+            'Force: Faible': 'Fuerza: Débil'
+        },
+        'ar': {
+            'Paramètres du Compte': 'إعدادات الحساب',
+            'Gérez vos préférences et la sécurité de votre compte': 'إدارة تفضيلاتك وأمان الحساب',
+            'Préférences': 'التفضيلات',
+            'Langue': 'اللغة',
+            'Thème': 'المظهر',
+            'Fuseau Horaire': 'المنطقة الزمنية',
+            'Devise': 'العملة',
+            'Notifications par email': 'الإشعارات البريدية',
+            'Notifications par SMS': 'إشعارات الرسائل النصية',
+            'Notifications push': 'الإشعارات الفورية',
+            'Confidentialité': 'الخصوصية',
+            'Enregistrer': 'حفظ',
+            'Changer le Mot de Passe': 'تغيير كلمة المرور',
+            'Mot de passe actuel': 'كلمة المرور الحالية',
+            'Nouveau mot de passe': 'كلمة المرور الجديدة',
+            'Confirmer le mot de passe': 'تأكيد كلمة المرور',
+            'Annuler': 'إلغاء',
+            'Changer': 'تغيير',
+            'Supprimer le Compte': 'حذف الحساب',
+            'Attention !': 'تحذير!',
+            'Force: Faible': 'القوة: ضعيفة'
+        }
+    };
+    
+    const langTranslations = translations[language] || translations['en'];
+    
+    // Translate all text nodes that contain French text
+    const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    let node;
+    while (node = walker.nextNode()) {
+        const text = node.textContent.trim();
+        if (text && langTranslations[text]) {
+            node.textContent = langTranslations[text];
+        }
+    }
+    
+    // Translate placeholders
+    document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(element => {
+        const placeholder = element.getAttribute('placeholder');
+        if (placeholder && langTranslations[placeholder]) {
+            element.setAttribute('placeholder', langTranslations[placeholder]);
+        }
+    });
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
