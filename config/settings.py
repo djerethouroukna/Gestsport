@@ -302,6 +302,11 @@ if 'RENDER' in os.environ:
             'LOCATION': config('REDIS_URL'),
         }
     }
+    
+    # Désactiver Pillow sur Render pour éviter les erreurs de compilation
+    PILLOW_ENABLED = False
+    QR_CODES_ENABLED = False
+    IMAGE_PROCESSING_ENABLED = False
 else:
     # Configuration locale
     CACHES = {

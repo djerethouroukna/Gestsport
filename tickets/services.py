@@ -11,10 +11,27 @@ from django.conf import settings
 from django.template import defaultfilters
 import os
 import pytz
-from PIL import Image as PILImage, ImageDraw, ImageFont
 from io import BytesIO
 from decimal import Decimal
 import json
+
+# Pillow uniquement si activé (pas sur Render)
+if getattr(settings, 'PILLOW_ENABLED', True):
+    from PIL import Image as PILImage, ImageDraw, ImageFont
+else:
+    # Classes factices pour éviter les erreurs
+    class PILImage:
+        @staticmethod
+        def new(*args, **kwargs):
+            return None
+    class ImageDraw:
+        @staticmethod
+        def Draw(*args, **kwargs):
+            return None
+    class ImageFont:
+        @staticmethod
+        def truetype(*args, **kwargs):
+            return None
 
 
 class TicketService:
