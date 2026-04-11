@@ -1,0 +1,145 @@
+# Requirements pour l'application mobile Kivy scanner
+
+# Kivy et interface mobile
+Kivy==2.2.1
+kivymd==1.1.1
+Kivy-Garden==0.1.5
+kivy-deps.angle==0.3.3
+kivy-deps.glew==0.3.1
+kivy-deps.sdl2==0.6.0
+
+# Interface alternative PyQt5
+PyQt5==5.15.11
+PyQt5-Qt5==5.15.2
+PyQt5_sip==12.17.1
+
+# Traitement d'images et QR codes
+opencv-python==4.13.0.92
+Pillow==10.0.0
+pyzbar==0.1.9
+qrcode==7.4.2
+numpy==2.2.6
+
+# Base de données
+mysql-connector-python==8.2.0
+mysqlclient==2.2.0
+
+# Requêtes HTTP
+requests==2.31.0
+
+# Sécurité
+cryptography==46.0.3
+
+# Utils
+python-dateutil==2.8.2
+python-dotenv==1.0.0
+
+# Support polices
+fonttools==4.61.1
+freetype-py==2.3.0
+
+# Support graphique
+pycairo==1.29.0
+rlPyCairo==0.4.0
+
+# Support images
+pypng==0.20220715.0
+
+# Environnement Windows
+pypiwin32==223
+pywin32==311
+
+# Support compatibilité
+colorama==0.4.6
+click==8.3.1
+packaging==25.0
+certifi==2025.11.12
+setuptools==57.4.0
+six==1.17.0
+attrs==25.4.0
+cffi==2.0.0
+pycparser==2.23
+
+# Support certificats
+oscrypto==1.3.0
+asn1crypto==1.5.1
+
+# Support réseau
+urllib3==2.5.0
+charset-normalizer==3.4.4
+idna==3.11
+chardet==5.2.0
+
+# Support HTTP
+h11==0.16.0
+sniffio==1.3.1
+
+# Support temps réel
+greenlet==3.2.4
+multidict==6.7.1
+frozenlist==1.8.0
+yarl==1.22.0
+async-timeout==5.0.1
+aiosignal==1.4.0
+aiohappyeyeballs==2.6.1
+
+# Support HTTP client
+aiohttp==3.13.3
+aiohttp-retry==2.9.1
+anyio==3.7.1
+
+# Support validation
+annotated-types==0.7.0
+referencing==0.37.0
+jsonschema-specifications==2025.9.1
+rpds-py==0.30.0
+
+# Support logging
+Pygments==2.19.2
+
+# Support configuration
+itsdangerous==2.2.0
+inflection==0.5.1
+incremental==24.11.0
+constantly==23.10.4
+hyperlink==21.0.0
+Twisted==25.5.0
+txaio==25.9.2
+
+# Support API
+starlette==0.27.0
+fastapi==0.104.1
+uvicorn==0.24.0
+
+# Support interface
+tinyhtml5==2.0.0
+
+# Support Zope
+zope.interface==8.1.1
+
+# Support uritemplates
+uritemplate==4.2.0
+uritools==5.0.0
+
+# Support YAML
+PyYAML==6.0.3
+
+# Support DNS
+dnspython==2.8.0
+
+# Support WebSocket
+autobahn==24.4.2
+
+# Support ASN.1
+pyasn1==0.6.1
+pyasn1_modules==0.4.2
+
+# Support protobuf
+protobuf==4.21.12
+propcache==0.4.1
+
+# Support PDF avancé
+pydyf==0.12.1
+pypdf==6.4.0
+pyhanko==0.32.0
+pyhanko-certvalidator==0.29.0
