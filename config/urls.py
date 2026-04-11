@@ -200,6 +200,9 @@ urlpatterns = [
 
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 
+    # Health check pour Render
+    path('health/', 'config.health.health_check', name='health-check'),
+
 ]
 
 
