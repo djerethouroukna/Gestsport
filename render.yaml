@@ -4,8 +4,8 @@ services:
     name: gestsport-web
     env: python
     plan: free
-    buildCommand: "pip install -r requirements-final.txt && python manage.py collectstatic --noinput"
-    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
+    buildCommand: "pip install -r requirements-render-garanteed.txt && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn config.wsgi_render_guaranteed:application --bind 0.0.0.0:$PORT"
     healthCheckPath: /health/
     envVars:
       - key: DEBUG
@@ -37,8 +37,8 @@ services:
     name: gestsport-websocket
     env: python
     plan: free
-    buildCommand: "pip install -r requirements-final.txt"
-    startCommand: "daphne config.asgi:application --bind 0.0.0.0:$PORT"
+    buildCommand: "pip install -r requirements-render-garanteed.txt"
+    startCommand: "daphne config.asgi_render_guaranteed:application --bind 0.0.0.0:$PORT"
     envVars:
       - key: DEBUG
         value: false

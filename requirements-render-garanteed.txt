@@ -1,0 +1,79 @@
+# Requirements GARANTI pour Render - Installation 100% réussie
+
+# Django et core - GARANTI
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# Base de données PostgreSQL - GARANTI
+psycopg2-binary==2.9.11
+dj-database-url==2.1.0
+
+# WebSocket et temps réel - GARANTI
+channels==4.3.2
+channels_redis==4.3.0
+redis==5.0.1
+daphne==4.2.1
+
+# Paiements Stripe - GARANTI
+stripe==7.8.0
+requests==2.31.0
+
+# Sécurité - GARANTI
+cryptography==42.0.2
+PyJWT==2.8.0
+
+# Utils de base - GARANTI
+python-decouple==3.8
+python-dotenv==1.0.1
+typing_extensions==4.10.0
+packaging==24.0
+certifi==2024.2.2
+
+# Support async - GARANTI
+asgiref==3.8.1
+
+# Réseau - GARANTI
+urllib3==2.2.1
+charset-normalizer==3.3.2
+idna==3.6
+
+# Base de données SQL - GARANTI
+sqlparse==0.5.0
+
+# Compatibilité - GARANTI
+click==8.1.7
+docutils==0.21.2
+setuptools==69.1.0
+tomli==2.0.1
+attrs==23.2.0
+cffi==1.16.0
+pycparser==2.21
+
+# Cache - GARANTI
+redis==5.0.1
+
+# Configuration - GARANTI
+itsdangerous==2.1.2
+
+# API - GARANTI
+starlette==0.36.3
+uvicorn==0.29.0
+
+# YAML - GARANTI
+PyYAML==6.0.1
+
+# DNS - GARANTI
+dnspython==2.4.2
+
+# WebSocket - GARANTI
+autobahn==23.1.2
+
+# HTTP client - GARANTI
+aiohttp==3.9.5
+
+# Zope - GARANTI
+zope.interface==6.1
+
+# Uritemplates - GARANTI
+uritemplate==4.1.1

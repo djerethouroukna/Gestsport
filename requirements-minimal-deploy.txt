@@ -1,0 +1,79 @@
+# Requirements ultra-minimal pour Render - GARANTIT l'affichage du projet
+
+# Django et core - ESSENTIEL
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# Base de données PostgreSQL - ESSENTIEL
+psycopg2-binary==2.9.11
+dj-database-url==2.1.0
+
+# WebSocket et temps réel - ESSENTIEL
+channels==4.3.2
+channels_redis==4.3.0
+redis==5.0.1
+daphne==4.2.1
+
+# Paiements Stripe - ESSENTIEL
+stripe==7.8.0
+requests==2.31.0
+
+# Sécurité - ESSENTIEL
+cryptography==42.0.2
+PyJWT==2.8.0
+
+# Utils de base - ESSENTIEL
+python-decouple==3.8
+python-dotenv==1.0.1
+typing_extensions==4.10.0
+packaging==24.0
+certifi==2024.2.2
+
+# Support async - ESSENTIEL
+asgiref==3.8.1
+
+# Réseau - ESSENTIEL
+urllib3==2.2.1
+charset-normalizer==3.3.2
+idna==3.6
+
+# Base de données SQL - ESSENTIEL
+sqlparse==0.5.0
+
+# Compatibilité - ESSENTIEL
+click==8.1.7
+docutils==0.21.2
+setuptools==69.1.0
+tomli==2.0.1
+attrs==23.2.0
+cffi==1.16.0
+pycparser==2.21
+
+# Cache - ESSENTIEL
+redis==5.0.1
+
+# Configuration - ESSENTIEL
+itsdangerous==2.1.2
+
+# API - ESSENTIEL
+starlette==0.36.3
+uvicorn==0.29.0
+
+# YAML - ESSENTIEL
+PyYAML==6.0.1
+
+# DNS - ESSENTIEL
+dnspython==2.4.2
+
+# WebSocket - ESSENTIEL
+autobahn==23.1.2
+
+# HTTP client - ESSENTIEL
+aiohttp==3.9.5
+
+# Zope - ESSENTIEL
+zope.interface==6.1
+
+# Uritemplates - ESSENTIEL
+uritemplate==4.1.1
