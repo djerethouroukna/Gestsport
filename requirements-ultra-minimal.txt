@@ -1,0 +1,62 @@
+# Requirements ULTRA-MINIMAL pour Render - GARANTIT installation
+
+# Django et core - SEULEMENT l'essentiel
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# Base de données PostgreSQL - SEULEMENT psycopg2
+psycopg2-binary==2.9.11
+
+# WebSocket et temps réel - SEULEMENT l'essentiel
+channels==4.3.2
+redis==5.0.1
+
+# Paiements Stripe - SEULEMENT l'essentiel
+stripe==7.8.0
+requests==2.31.0
+
+# Sécurité - SEULEMENT l'essentiel
+PyJWT==2.8.0
+
+# Utils de base - SEULEMENT l'essentiel
+python-decouple==3.8
+python-dotenv==1.0.1
+
+# Support async - SEULEMENT l'essentiel
+asgiref==3.8.1
+
+# Réseau - SEULEMENT l'essentiel
+urllib3==2.2.1
+
+# Base de données SQL - SEULEMENT l'essentiel
+sqlparse==0.5.0
+
+# Compatibilité - SEULEMENT l'essentiel
+click==8.1.7
+setuptools==69.1.0
+attrs==23.2.0
+
+# Cache - SEULEMENT l'essentiel
+redis==5.0.1
+
+# Configuration - SEULEMENT l'essentiel
+itsdangerous==2.1.2
+
+# API - SEULEMENT l'essentiel
+starlette==0.36.3
+
+# YAML - SEULEMENT l'essentiel
+PyYAML==6.0.1
+
+# DNS - SEULEMENT l'essentiel
+dnspython==2.4.2
+
+# WebSocket - SEULEMENT l'essentiel
+autobahn==23.1.2
+
+# HTTP client - SEULEMENT l'essentiel
+aiohttp==3.9.5
+
+# Zope - SEULEMENT l'essentiel
+zope.interface==6.1

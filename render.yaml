@@ -4,8 +4,8 @@ services:
     name: gestsport-web
     env: python
     plan: free
-    buildCommand: "pip install -r requirements-no-pillow.txt && python manage.py collectstatic --noinput"
-    startCommand: "gunicorn config.wsgi_no_pillow:application --bind 0.0.0.0:$PORT"
+    buildCommand: "pip install -r requirements-ultra-minimal.txt && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn config.wsgi_ultra_minimal:application --bind 0.0.0.0:$PORT"
     healthCheckPath: /health/
     envVars:
       - key: DEBUG
@@ -37,8 +37,8 @@ services:
     name: gestsport-websocket
     env: python
     plan: free
-    buildCommand: "pip install -r requirements-no-pillow.txt"
-    startCommand: "daphne config.asgi_no_pillow:application --bind 0.0.0.0:$PORT"
+    buildCommand: "pip install -r requirements-ultra-minimal.txt"
+    startCommand: "daphne config.asgi_ultra_minimal:application --bind 0.0.0.0:$PORT"
     envVars:
       - key: DEBUG
         value: false
